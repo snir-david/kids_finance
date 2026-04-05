@@ -1,28 +1,43 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+/// Riverpod providers for authentication and user state.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/app_user.dart';
 
-part 'auth_providers.g.dart';
+/// Watches Firebase auth state and emits User or null
+final firebaseAuthStateProvider =
+    StreamProvider<firebase_auth.User?>((ref) {
+  return firebase_auth.FirebaseAuth.instance.authStateChanges();
+});
 
-/// Watches Firebase auth state and emits AppUser or null
-@riverpod
-Stream<AppUser?> authState(AuthStateRef ref) {
-  return FirebaseAuth.instance.authStateChanges().map((firebaseUser) {
-    if (firebaseUser == null) return null;
-    
-    // TODO: Fetch user role from Firestore user profile
-    // For now, return a basic AppUser
-    return AppUser(
-      id: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      role: 'parent', // Placeholder - will be fetched from Firestore
-    );
+/// Stream provider for the current family ID from user profile
+final currentFamilyIdProvider = StreamProvider<String?>((ref) {
+  final authState = ref.watch(firebaseAuthStateProvider);
+  final user = authState.valueOrNull;
+  
+  if (user == null) return Stream.value(null);
+  
+  return FirebaseFirestore.instance
+      .collection('userProfiles')
+      .doc(user.uid)
+      .snapshots()
+      .map((snapshot) {
+    if (!snapshot.exists) return null;
+    return snapshot.data()?['familyId'] as String?;
   });
-}
+});
 
-/// Current authenticated user provider
-@riverpod
-AppUser? currentUser(CurrentUserRef ref) {
-  final authState = ref.watch(authStateProvider);
-  return authState.valueOrNull;
-}
+/// Provider for the current user's role
+final appUserRoleProvider = Provider<AppUserRole>((ref) {
+  final authState = ref.watch(firebaseAuthStateProvider);
+  final user = authState.valueOrNull;
+  
+  if (user == null) return AppUserRole.unauthenticated;
+  
+  // TODO: Fetch from Firestore user profile
+  // For now, default to parent
+  return AppUserRole.parent;
+});
+
+/// State provider for the currently active child (when in child mode)
+final activeChildProvider = StateProvider<String?>((ref) => null);

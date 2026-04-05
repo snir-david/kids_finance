@@ -1,24 +1,24 @@
+/// Application routing configuration using GoRouter.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/parent_home_screen.dart';
 import '../features/auth/presentation/child_home_screen.dart';
 import '../features/auth/presentation/child_pin_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
+import '../features/auth/domain/app_user.dart';
 
-part 'app_router.g.dart';
-
-@riverpod
-GoRouter appRouter(AppRouterRef ref) {
-  final authState = ref.watch(authStateProvider);
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(firebaseAuthStateProvider);
 
   return GoRouter(
     initialLocation: '/splash',
     redirect: (BuildContext context, GoRouterState state) {
       final isLoggedIn = authState.valueOrNull != null;
       final currentLocation = state.matchedLocation;
+      final userRole = ref.read(appUserRoleProvider);
 
       // Not authenticated: redirect to login
       if (!isLoggedIn && currentLocation != '/login') {
@@ -27,10 +27,9 @@ GoRouter appRouter(AppRouterRef ref) {
 
       // Authenticated but on login page: redirect based on role
       if (isLoggedIn && currentLocation == '/login') {
-        final user = authState.value;
-        if (user?.role == 'parent') {
+        if (userRole == AppUserRole.parent) {
           return '/parent-home';
-        } else if (user?.role == 'child') {
+        } else if (userRole == AppUserRole.child) {
           // Child needs PIN verification
           return '/child-pin';
         }
@@ -62,7 +61,7 @@ GoRouter appRouter(AppRouterRef ref) {
       ),
     ],
   );
-}
+});
 
 // Placeholder screens
 class SplashScreen extends StatelessWidget {

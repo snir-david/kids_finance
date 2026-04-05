@@ -1,63 +1,58 @@
+/// Riverpod providers for transaction-related functionality.
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/transaction.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../domain/transaction.dart' as app_transaction;
 import '../domain/transaction_repository.dart';
 import '../data/firebase_transaction_repository.dart';
 
-part 'transaction_providers.g.dart';
-
 /// Repository provider
-@riverpod
-TransactionRepository transactionRepository(TransactionRepositoryRef ref) {
+final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return FirebaseTransactionRepository(firestore: FirebaseFirestore.instance);
-}
+});
 
 /// Stream provider for transaction history of a child
-@riverpod
-Stream<List<Transaction>> transactionHistory(TransactionHistoryRef ref, {
-  required String childId,
-  required String familyId,
-}) {
+final transactionHistoryProvider = StreamProvider.family<
+    List<app_transaction.Transaction>,
+    ({String childId, String familyId})>((ref, params) {
   final repository = ref.watch(transactionRepositoryProvider);
   return repository.getTransactionsStream(
-    childId: childId,
-    familyId: familyId,
+    childId: params.childId,
+    familyId: params.familyId,
   );
-}
+});
 
 /// Stream provider for recent transactions (last 10)
-@riverpod
-Stream<List<Transaction>> recentTransactions(RecentTransactionsRef ref, {
-  required String childId,
-  required String familyId,
-}) {
+final recentTransactionsProvider = StreamProvider.family<
+    List<app_transaction.Transaction>,
+    ({String childId, String familyId})>((ref, params) {
   final repository = ref.watch(transactionRepositoryProvider);
   return repository.getTransactionsStream(
-    childId: childId,
-    familyId: familyId,
+    childId: params.childId,
+    familyId: params.familyId,
     limit: 10,
   );
-}
+});
 
 /// Provider to get transactions by type
-@riverpod
-Stream<List<Transaction>> transactionsByType(TransactionsByTypeRef ref, {
-  required String childId,
-  required String familyId,
-  required TransactionType type,
-}) {
-  final allTransactionsAsync = ref.watch(transactionHistoryProvider(
-    childId: childId,
-    familyId: familyId,
-  ));
+final transactionsByTypeProvider = StreamProvider.family<
+    List<app_transaction.Transaction>,
+    ({
+      String childId,
+      String familyId,
+      app_transaction.TransactionType type
+    })>((ref, params) {
+  final allTransactionsAsync = ref.watch(transactionHistoryProvider((
+    childId: params.childId,
+    familyId: params.familyId,
+  )));
 
   return allTransactionsAsync.when(
     data: (transactions) {
       return Stream.value(
-        transactions.where((txn) => txn.type == type).toList(),
+        transactions.where((txn) => txn.type == params.type).toList(),
       );
     },
     loading: () => Stream.value([]),
     error: (error, stack) => Stream.error(error, stack),
   );
-}
+});

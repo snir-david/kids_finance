@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
-import '../../transactions/domain/transaction.dart';
+import '../../transactions/domain/transaction.dart' as app_transaction;
 
 class FirebaseBucketRepository implements BucketRepository {
   final FirebaseFirestore _firestore;
@@ -62,12 +62,12 @@ class FirebaseBucketRepository implements BucketRepository {
       final now = DateTime.now();
 
       // Create transaction log
-      final txn = Transaction(
+      final txn = app_transaction.Transaction(
         id: transactionRef.id,
         familyId: familyId,
         childId: childId,
         bucketType: BucketType.money,
-        type: TransactionType.moneySet,
+        type: app_transaction.TransactionType.moneySet,
         amount: newBalance - currentBalance,
         multiplier: null,
         previousBalance: currentBalance,
@@ -121,12 +121,12 @@ class FirebaseBucketRepository implements BucketRepository {
       final now = DateTime.now();
 
       // Create transaction log
-      final txn = Transaction(
+      final txn = app_transaction.Transaction(
         id: transactionRef.id,
         familyId: familyId,
         childId: childId,
         bucketType: BucketType.investment,
-        type: TransactionType.investmentMultiplied,
+        type: app_transaction.TransactionType.investmentMultiplied,
         amount: amount,
         multiplier: multiplier,
         previousBalance: currentBalance,
@@ -173,12 +173,12 @@ class FirebaseBucketRepository implements BucketRepository {
       final now = DateTime.now();
 
       // Create transaction log
-      final txn = Transaction(
+      final txn = app_transaction.Transaction(
         id: transactionRef.id,
         familyId: familyId,
         childId: childId,
         bucketType: BucketType.charity,
-        type: TransactionType.charityDonated,
+        type: app_transaction.TransactionType.charityDonated,
         amount: currentBalance,
         multiplier: null,
         previousBalance: currentBalance,
@@ -231,12 +231,12 @@ class FirebaseBucketRepository implements BucketRepository {
       final now = DateTime.now();
 
       // Create transaction log
-      final txn = Transaction(
+      final txn = app_transaction.Transaction(
         id: transactionRef.id,
         familyId: familyId,
         childId: childId,
         bucketType: BucketType.money,
-        type: TransactionType.moneyAdded,
+        type: app_transaction.TransactionType.moneyAdded,
         amount: amount,
         multiplier: null,
         previousBalance: currentBalance,
@@ -293,12 +293,12 @@ class FirebaseBucketRepository implements BucketRepository {
       final now = DateTime.now();
 
       // Create transaction log
-      final txn = Transaction(
+      final txn = app_transaction.Transaction(
         id: transactionRef.id,
         familyId: familyId,
         childId: childId,
         bucketType: BucketType.money,
-        type: TransactionType.moneyRemoved,
+        type: app_transaction.TransactionType.moneyRemoved,
         amount: amount,
         multiplier: null,
         previousBalance: currentBalance,

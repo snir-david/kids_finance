@@ -1,5 +1,4 @@
 import 'bucket.dart';
-import '../../transactions/domain/transaction.dart';
 
 abstract class BucketRepository {
   /// Stream all buckets for a specific child

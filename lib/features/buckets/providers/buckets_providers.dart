@@ -1,40 +1,30 @@
+/// Riverpod providers for bucket-related functionality.
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
 import '../data/firebase_bucket_repository.dart';
 
-part 'buckets_providers.g.dart';
-
 /// Repository provider
-@riverpod
-BucketRepository bucketRepository(BucketRepositoryRef ref) {
+final bucketRepositoryProvider = Provider<BucketRepository>((ref) {
   return FirebaseBucketRepository(firestore: FirebaseFirestore.instance);
-}
+});
 
 /// Stream provider for all buckets of a specific child
-@riverpod
-Stream<List<Bucket>> childBuckets(ChildBucketsRef ref, {
-  required String childId,
-  required String familyId,
-}) {
+final childBucketsProvider = StreamProvider.family<List<Bucket>,
+    ({String childId, String familyId})>((ref, params) {
   final repository = ref.watch(bucketRepositoryProvider);
   return repository.getBucketsStream(
-    childId: childId,
-    familyId: familyId,
+    childId: params.childId,
+    familyId: params.familyId,
   );
-}
+});
 
 /// Provider for total wealth (sum of all buckets) for a child
-@riverpod
-double totalWealth(TotalWealthRef ref, {
-  required String childId,
-  required String familyId,
-}) {
-  final bucketsAsync = ref.watch(childBucketsProvider(
-    childId: childId,
-    familyId: familyId,
-  ));
+final totalWealthProvider =
+    Provider.family<double, ({String childId, String familyId})>(
+        (ref, params) {
+  final bucketsAsync = ref.watch(childBucketsProvider(params));
 
   return bucketsAsync.when(
     data: (buckets) {
@@ -46,27 +36,23 @@ double totalWealth(TotalWealthRef ref, {
     loading: () => 0.0,
     error: (_, __) => 0.0,
   );
-}
+});
 
 /// Provider to get a specific bucket by type
-@riverpod
-Bucket? bucketByType(BucketByTypeRef ref, {
-  required String childId,
-  required String familyId,
-  required BucketType type,
-}) {
-  final bucketsAsync = ref.watch(childBucketsProvider(
-    childId: childId,
-    familyId: familyId,
-  ));
+final bucketByTypeProvider = Provider.family<Bucket?,
+    ({String childId, String familyId, BucketType type})>((ref, params) {
+  final bucketsAsync = ref.watch(childBucketsProvider((
+    childId: params.childId,
+    familyId: params.familyId,
+  )));
 
   return bucketsAsync.whenOrNull(
     data: (buckets) {
       try {
-        return buckets.firstWhere((bucket) => bucket.type == type);
+        return buckets.firstWhere((bucket) => bucket.type == params.type);
       } catch (_) {
         return null;
       }
     },
   );
-}
+});

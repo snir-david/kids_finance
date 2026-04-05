@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../domain/transaction.dart';
+import '../domain/transaction.dart' as app_transaction;
 import '../domain/transaction_repository.dart';
 
 class FirebaseTransactionRepository implements TransactionRepository {
@@ -9,7 +9,7 @@ class FirebaseTransactionRepository implements TransactionRepository {
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
-  Stream<List<Transaction>> getTransactionsStream({
+  Stream<List<app_transaction.Transaction>> getTransactionsStream({
     required String childId,
     required String familyId,
     int? limit,
@@ -27,7 +27,7 @@ class FirebaseTransactionRepository implements TransactionRepository {
 
     return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Transaction.fromJson({
+        return app_transaction.Transaction.fromJson({
           'id': doc.id,
           ...doc.data(),
         });
@@ -36,7 +36,7 @@ class FirebaseTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<void> logTransaction(Transaction transaction) async {
+  Future<void> logTransaction(app_transaction.Transaction transaction) async {
     final transactionRef = _firestore
         .collection('families')
         .doc(transaction.familyId)

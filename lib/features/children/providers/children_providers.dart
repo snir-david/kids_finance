@@ -1,20 +1,18 @@
+/// Riverpod providers for child-related functionality.
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/child.dart';
 import '../domain/child_repository.dart';
 import '../data/firebase_child_repository.dart';
 
-part 'children_providers.g.dart';
-
 /// Repository provider
-@riverpod
-ChildRepository childRepository(ChildRepositoryRef ref) {
+final childRepositoryProvider = Provider<ChildRepository>((ref) {
   return FirebaseChildRepository(firestore: FirebaseFirestore.instance);
-}
+});
 
 /// Stream provider for all children in a family
-@riverpod
-Stream<List<Child>> children(ChildrenRef ref, String familyId) {
+final childrenProvider =
+    StreamProvider.family<List<Child>, String>((ref, familyId) {
   return FirebaseFirestore.instance
       .collection('families')
       .doc(familyId)
@@ -28,26 +26,15 @@ Stream<List<Child>> children(ChildrenRef ref, String familyId) {
       });
     }).toList();
   });
-}
+});
 
 /// Stream provider for a specific child
-@riverpod
-Stream<Child?> child(ChildRef ref, String childId, String familyId) {
+final childProvider =
+    StreamProvider.family<Child?, ({String childId, String familyId})>(
+        (ref, params) {
   final repository = ref.watch(childRepositoryProvider);
-  return repository.getChildStream(childId, familyId);
-}
+  return repository.getChildStream(params.childId, params.familyId);
+});
 
 /// State provider for the currently selected child ID
-@riverpod
-class SelectedChild extends _$SelectedChild {
-  @override
-  String? build() => null;
-
-  void select(String? childId) {
-    state = childId;
-  }
-
-  void clear() {
-    state = null;
-  }
-}
+final selectedChildProvider = StateProvider<String?>((ref) => null);

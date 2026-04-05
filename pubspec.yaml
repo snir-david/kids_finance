@@ -12,7 +12,6 @@ dependencies:
 
   # State Management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Routing
   go_router: ^14.6.2
@@ -24,34 +23,24 @@ dependencies:
   cloud_functions: ^5.2.2
   firebase_crashlytics: ^4.1.8
 
-  # Data Models & Serialization
-  freezed_annotation: ^2.4.4
-  json_annotation: ^4.9.0
+  # Data Models
+  equatable: ^2.0.5
 
   # UI & Design
   google_fonts: ^6.2.1
+  google_sign_in: ^6.2.2
   flutter_animate: ^4.5.0
   flutter_svg: ^2.0.10+1
 
   # Utilities
   intl: ^0.19.0
   flutter_secure_storage: ^9.2.2
+  bcrypt: ^1.1.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Code Generation
-  build_runner: ^2.4.13
-  riverpod_generator: ^2.6.2
-  freezed: ^2.5.7
-  json_serializable: ^6.8.0
-
-  # Linting
   flutter_lints: ^5.0.0
-  riverpod_lint: ^2.6.1
-
-  # Testing
   mockito: ^5.4.4
   fake_cloud_firestore: ^3.0.3
   integration_test:
@@ -59,7 +48,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  # assets:
-  #   - images/
-  #   - icons/
