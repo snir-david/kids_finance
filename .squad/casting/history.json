@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "assignments": [
+    {
+      "assignment_id": "kidsfinance-2026-04-05",
+      "project": "kids_finance",
+      "universe": "Iron Man (Marvel)",
+      "created_at": "2026-04-05",
+      "agents": ["Stark", "Rhodey", "JARVIS", "Pepper", "Fury", "Happy", "Scribe", "Ralph"]
+    }
+  ]
+}

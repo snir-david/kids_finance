@@ -1,0 +1,7 @@
+{
+  "version": "1.0",
+  "universeAllowlist": ["Iron Man (Marvel)"],
+  "selectedUniverse": "Iron Man (Marvel)",
+  "maxAgents": 20,
+  "overflowStrategy": "diegetic-expansion"
+}

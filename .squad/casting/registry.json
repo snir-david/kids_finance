@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "agents": [
+    { "persistent_name": "Stark", "character": "Tony Stark", "universe": "Iron Man (Marvel)", "role": "Tech Lead", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Rhodey", "character": "James Rhodes", "universe": "Iron Man (Marvel)", "role": "Mobile Dev", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "JARVIS", "character": "JARVIS", "universe": "Iron Man (Marvel)", "role": "Backend Dev", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Pepper", "character": "Pepper Potts", "universe": "Iron Man (Marvel)", "role": "UI/UX Designer", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Fury", "character": "Nick Fury", "universe": "Iron Man (Marvel)", "role": "Security & Auth", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Happy", "character": "Happy Hogan", "universe": "Iron Man (Marvel)", "role": "QA/Tester", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Scribe", "character": "Scribe", "universe": "reserved", "role": "Session Logger", "created_at": "2026-04-05", "legacy_named": false, "status": "active" },
+    { "persistent_name": "Ralph", "character": "Ralph", "universe": "reserved", "role": "Work Monitor", "created_at": "2026-04-05", "legacy_named": false, "status": "active" }
+  ]
+}

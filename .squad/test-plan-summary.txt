@@ -1,0 +1,131 @@
+================================================================================
+KIDSFINANCE TEST PLAN — QUICK REFERENCE
+================================================================================
+
+Master Test Plan: .squad/test-plan-master.md (487 lines, comprehensive)
+Decision Input:   .squad/decisions/inbox/happy-test-plan.md (212 lines, for squad review)
+Learnings:        .squad/agents/happy/history.md (Learnings section appended)
+
+================================================================================
+TEST CATEGORIES & COVERAGE
+================================================================================
+
+1. Authentication & Authorization       — 5 tests (2 P0)
+2. Bucket Operations (Money)             — 7 tests (4 P0)
+3. Investment Multiplier                 — 6 tests (3 P0)
+4. Charity Reset                         — 6 tests (3 P0)
+5. Permissions - Child Isolation         — 4 tests (4 P0) ★ CRITICAL
+6. Permissions - Parent Access           — 4 tests (4 P0) ★ CRITICAL
+7. Multi-Parent Scenarios                — 6 tests (3 P0)
+8. Multi-Child Scenarios                 — 3 tests (2 P0)
+9. Offline & Sync                        — 4 tests (0 P0, all P1)
+10. UI & UX                              — 4 tests (0 P0, all P1)
+11. Permission Boundary Tests (SEC-*)    — 8 tests (8 P0) ★ SECURITY-CRITICAL
+12. Edge Cases & Boundary Values         — 30+ tests (math, concurrency, data validation)
+
+TOTAL: 60+ test cases, 30+ P0 tests, 8 security boundary tests
+
+================================================================================
+CRITICAL PATH (P0 TESTS - MUST PASS BEFORE RELEASE)
+================================================================================
+
+✓ AUTH-001 to AUTH-005       — Parent signup/login, child account creation
+✓ MONEY-001 to MONEY-007     — Set money, view, persistence, validation
+✓ INVEST-001 to INVEST-006   — Multiply transactions, audit trail, zero edge case
+✓ CHARITY-001 to CHARITY-006 — Donate, reset, history, idempotence
+✓ PERM-001 to PERM-008       — Child isolation, parent access, family boundaries
+✓ MULTI-P-001 to MULTI-P-006 — Concurrent edits, invite/revoke, sync
+✓ SEC-CHILD-001 to SEC-CHILD-005     — Child privilege escalation prevention
+✓ SEC-PARENT-001 to SEC-PARENT-005   — Parent access controls
+✓ SEC-FAMILY-001 to SEC-FAMILY-003   — Family isolation
+
+================================================================================
+EDGE CASES (MUST BE COVERED)
+================================================================================
+
+Money Bucket:        Zero, large values, decimals, concurrent increments, rapid updates
+Investment:          Multiply by 0/1, zero balance multiply, large multipliers, fractional
+Charity:             Zero balance reset, rapid resets, concurrent parent+child ops
+Offline:             Extended offline, stale data, conflict resolution, flaky network
+Multi-Parent:        Simultaneous edits same field, remove during edit, state divergence
+Data Validation:     Non-numeric, special chars, long strings, whitespace trimming
+Session:             Timeout, multi-device, token refresh, background/foreground
+
+================================================================================
+TEST INFRASTRUCTURE REQUIREMENTS
+================================================================================
+
+✓ Firebase Emulator Suite
+  - Local Firestore, Auth, Cloud Functions
+  - Fast, deterministic, replayable
+  - Reset scripts for test isolation
+
+✓ Flutter Test Harness
+  - Unit tests: bucket logic, permissions, audit
+  - Widget tests: Kid Mode UI, Parent Mode controls
+  - Integration tests: full user flows + Firebase emulator
+
+✓ Cloud Functions Jest Tests
+  - Permission checks (sensitive operations)
+  - Conflict resolution logic
+  - Transaction audit creation
+
+✓ Test Fixtures
+  - Family 1: Parent A (admin) + Parent B (member) + 2 children
+  - Family 2: Parent C (admin) + 1 child
+  - Known credentials for reproducibility
+
+✓ CI/CD Integration
+  - Unit tests: < 1 min, every commit
+  - Widget tests: < 2 min, every PR
+  - Integration tests: < 5 min, every PR
+  - Cloud Functions: < 1 min, every PR
+  - Coverage minimum: 80% critical paths, 100% permissions
+
+================================================================================
+DEFINITION OF DONE (per feature)
+================================================================================
+
+1. Code passes linter (Dart/Flutter standards)
+2. Tests written: unit + widget + integration
+3. Edge cases covered (if applicable to feature)
+4. Permission checks validated + Fury (Security) review
+5. Firebase emulator integration tested
+6. Manual QA testing on Android device
+7. Audit trail/transaction logging verified (if applicable)
+8. Offline behavior tested (if applicable)
+9. PR reviewed by Stark (tech lead) + Fury (security)
+10. Merged to main, no test regressions
+
+================================================================================
+OPEN QUESTIONS FOR SQUAD CONSENSUS
+================================================================================
+
+Q1: Multiply by zero — Allow (→$0), reject error, or reject with validation?
+Q2: Offline conflict resolution — Last-write-wins, user prompt, or CRDT?
+Q3: Offline queue retention — Infinite, 30 min, 24 hours?
+Q4: Child spending limits — Pure parent control, or per-transaction limits?
+Q5: Child login auth — PIN only, or PIN + biometric?
+
+See .squad/decisions/inbox/happy-test-plan.md for details & impact.
+
+================================================================================
+SUCCESS CRITERIA FOR MVP LAUNCH
+================================================================================
+
+✓ All P0 tests passing (30+ tests)
+✓ All permission boundary tests passing (SEC-* tests)
+✓ Zero child-to-parent privilege escalation bugs
+✓ Multi-parent concurrent edits resolve consistently
+✓ Offline queue & sync working reliably
+✓ Audit trail accurate on all operations
+✓ Code coverage ≥ 80% critical paths
+✓ Manual QA sign-off (Pepper + team)
+✓ Fury (Security) approval on auth & permissions
+✓ Stark (Tech Lead) architectural sign-off
+
+================================================================================
+CREATED BY: Happy (QA/Tester)
+DATE: 2026-04-05
+STATUS: Ready for Squad Review & Approval
+================================================================================
