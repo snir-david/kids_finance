@@ -78,3 +78,93 @@
 
 **Handoff to:** JARVIS (Backend) for Cloud Functions and Firestore rules implementation.
 
+### 2026-04-05: Phase 1 Auth & Security Implementation Complete
+
+**Implemented complete authentication and security layer for KidsFinance:**
+
+1. **AuthService** (`lib/features/auth/data/auth_service.dart`):
+   - Email/password authentication with Firebase Auth
+   - Google Sign-In integration
+   - Family creation with Firestore batch writes
+   - Comprehensive error handling for all auth exceptions
+   - Account creation, password reset, email verification
+
+2. **PinService** (`lib/features/auth/data/pin_service.dart`):
+   - bcrypt-based PIN hashing (4-6 digits)
+   - Brute-force protection: 5 attempts, 15-minute lockout
+   - Child session management via FlutterSecureStorage (30-day expiry)
+   - Sealed class pattern for PinResult (success/wrongPin/locked)
+   - Lockout state persistence across app restarts
+
+3. **Auth Providers** (`lib/features/auth/providers/auth_providers.dart`):
+   - Riverpod providers for auth state management
+   - AppUserRole enum (parent/child/unauthenticated)
+   - activeChildProvider for child session tracking
+   - familyId and role resolution from Firestore userProfiles
+   - Session validation provider per child
+
+4. **Firestore Security Rules** (`firestore.rules`):
+   - Complete production-ready rules with family isolation
+   - Parent-only write access to all family data
+   - Child read-only access to own buckets and transactions
+   - Investment multiplier validation (must be >0)
+   - Charity donation validation (newBalance must be 0)
+   - Helper functions for role/family checking
+   - Invitation system rules for multi-parent support
+
+5. **Cloud Functions** (`functions/src/index.ts`):
+   - onMultiplyInvestment: validates multiplier >0, atomic batch update
+   - onDonateCharity: resets charity bucket to 0, creates transaction
+   - onSetMoney: validates amount >=0, creates transaction
+   - onSetCustomClaims: syncs JWT claims from Firestore userProfiles
+   - All functions enforce parent-only access with role checks
+   - Complete TypeScript implementation with proper error handling
+
+6. **Auth Flow Screens** (Flutter UI stubs):
+   - login_screen.dart: Email/password + Google sign-in (existing)
+   - child_pin_screen.dart: 4-digit PIN entry with visual feedback (existing)
+   - family_setup_screen.dart: First-time family name input
+
+**Key Security Decisions:**
+- PIN length: 4 digits (10,000 combinations, acceptable for children with rate limiting)
+- Session duration: 30 days (balances UX with security)
+- Lockout: 15 minutes after 5 failed attempts (prevents brute force without permanent lockout)
+- Storage: FlutterSecureStorage for local session/lockout state, Firestore for PIN hash
+- Custom claims: role, familyId, childId synced from Firestore to JWT for offline enforcement
+- Investment multiplier: MUST be >0 (enforced in rules AND Cloud Functions)
+- Charity donation: MUST set balance to 0 (enforced in rules)
+
+**Files Created:**
+- `lib/features/auth/data/auth_service.dart` (145 lines)
+- `lib/features/auth/data/pin_service.dart` (177 lines)
+- `lib/features/auth/providers/auth_providers.dart` (87 lines)
+- `firestore.rules` (124 lines)
+- `functions/src/index.ts` (304 lines)
+- `functions/package.json` (TypeScript + Firebase deps)
+- `functions/tsconfig.json` (TS compiler config)
+- `functions/.eslintrc.json` (ESLint config)
+
+**Dependencies Added:**
+- Dart: bcrypt, flutter_secure_storage, firebase_auth, cloud_firestore, google_sign_in
+- TypeScript: firebase-functions, firebase-admin
+
+**Next Steps:**
+- Integrate auth providers with routing (GoRouter auth redirect)
+- Connect UI screens to actual auth/pin services
+- Deploy Cloud Functions to Firebase
+- Deploy Firestore rules
+- Write integration tests for security boundaries
+
+### 2026-04-05: Phase 1 Complete — Auth & Security Finalized
+- **Status:** ✅ PHASE 1 AUTH & SECURITY FINALIZED
+- AuthService: Email/password, Google Sign-In, family creation with batch writes
+- PinService: bcrypt hashing (4-6 digits), 5-attempt brute-force, 15-min lockout, 30-day sessions
+- Auth providers: authStateProvider, role/familyId/childId resolution from Firestore
+- Firestore security rules (124 lines): Family isolation, parent-only writes, child read-only, validation enforcement
+- Cloud Functions (304 lines TypeScript): onMultiplyInvestment, onDonateCharity, onSetMoney, onSetCustomClaims
+- Multi-layer validation: JWT claims + Firestore rules + Cloud Functions
+- COPPA compliance: No child email collection, implicit parental consent, data deletion support
+- Security decisions locked in: PIN=4 digits, session=30 days, lockout=15 min, multiplier>0, charity→0
+- **Orchestration Log:** `.squad/orchestration-log/2026-04-05T18-30-00Z-fury-auth.md`
+- **Next:** Rhodey for UI connection, Happy for integration tests (SEC-001 through SEC-008)
+

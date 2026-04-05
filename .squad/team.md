@@ -29,3 +29,12 @@
 - **Target Platform:** Android (primary), cross-platform expansion possible
 - **Universe:** Iron Man (Marvel)
 - **Created:** 2026-04-05
+
+## Issue Source
+
+- **Repository:** snir-david/kids_finance
+- **URL:** https://github.com/snir-david/kids_finance
+- **Connected:** 2026-04-05
+- **Default Branch:** main
+- **Open Issues:** 0 (as of connection)
+- **Filters:** All open issues

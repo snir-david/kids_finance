@@ -61,3 +61,79 @@
 
 **Output:** Created `FIRESTORE_DATA_MODEL.md` with complete collection structure, document schemas, transaction types, Riverpod provider sketch, and Cloud Function specifications.
 
+### 2026-04-05: Phase 1 Data Layer Implementation
+
+**Implementation Completed:**
+1. **Domain Models (Freezed + JSON):**
+   - `Family` — id, name, parentIds, childIds, createdAt, schemaVersion
+   - `ParentUser` — uid, displayName, familyId, isOwner, createdAt
+   - `Child` — id, familyId, displayName, avatarEmoji, pinHash, sessionExpiresAt, createdAt
+   - `Bucket` — id, childId, familyId, type (enum), balance, lastUpdatedAt
+   - `Transaction` — id, familyId, childId, bucketType, type (enum), amount, multiplier, previousBalance, newBalance, note, performedByUid, performedAt
+
+2. **Repository Interfaces:**
+   - `FamilyRepository` — getFamilyStream, createFamily, addParent, addChild
+   - `ChildRepository` — getChildStream, updateChild, updatePinHash, updateSessionExpiry
+   - `BucketRepository` — getBucketsStream, setMoneyBalance, multiplyInvestment (validates >0), donateCharity, addMoney, removeMoney
+   - `TransactionRepository` — getTransactionsStream, logTransaction, archiveOldTransactions
+
+3. **Firebase Implementations:**
+   - All repositories implemented with Firestore
+   - Atomic transactions using `runTransaction()` for bucket mutations
+   - Batch writes for multi-document creates (family + user profile, child + buckets)
+   - Investment multiplier validation: throws ArgumentError if ≤ 0
+   - Transaction archiving to `/archivedTransactions` subcollection
+
+4. **Riverpod Providers:**
+   - `familyProvider` — StreamProvider for current family
+   - `currentUserProfileProvider` — StreamProvider for parent user
+   - `childrenProvider` — StreamProvider for all children in family
+   - `selectedChildProvider` — StateProvider for currently viewed child
+   - `childBucketsProvider` — StreamProvider for child's buckets
+   - `totalWealthProvider` — Computed provider summing all bucket balances
+   - `bucketByTypeProvider` — Get specific bucket by type
+   - `transactionHistoryProvider` — StreamProvider for all transactions
+   - `recentTransactionsProvider` — StreamProvider for last 10 transactions
+   - `transactionsByTypeProvider` — Filtered transactions by type
+
+**Firestore Paths Used:**
+- `/families/{familyId}` — Family documents
+- `/families/{familyId}/children/{childId}` — Child documents
+- `/families/{familyId}/children/{childId}/buckets/{bucketType}` — Bucket documents
+- `/families/{familyId}/transactions/{txnId}` — Transaction log (all children)
+- `/families/{familyId}/archivedTransactions/{txnId}` — Archived transactions
+- `/userProfiles/{uid}` — Parent user profiles (top-level for fast lookup)
+
+**Key Implementation Details:**
+- Freezed models with `@freezed` annotation and JSON serialization
+- All bucket mutations create immutable transaction logs
+- Firestore transactions ensure atomic updates (bucket + log)
+- Investment multiplier must be > 0 (ArgumentError thrown)
+- Charity donation sets balance to 0 and logs amount donated
+- Repository pattern enforced: no direct Firestore access from UI
+- Riverpod code generation with `@riverpod` annotation
+- Real-time streams for buckets, children, and transactions
+
+**Index Requirements:**
+- Composite index: `childId (ASC) + performedAt (DESC)` on transactions collection
+
+**Next Steps:**
+- Run code generation: `dart run build_runner build --delete-conflicting-outputs`
+- Unit tests for repositories and providers
+- Firestore security rules
+- UI integration with providers
+
+### 2026-04-05: Phase 1 Complete — Data Layer Finalized
+- **Status:** ✅ PHASE 1 DATA LAYER FINALIZED
+- 22 files / 1,464 lines created: 5 Freezed models, 4 repository interfaces, 4 Firebase implementations, 15+ providers
+- Domain models: Family, ParentUser, Child, Bucket, Transaction (all with JSON serialization)
+- Repository pattern strictly enforced: FamilyRepository, ChildRepository, BucketRepository, TransactionRepository
+- Firestore collection structure finalized with family-centric hierarchy
+- Atomic transactions using `runTransaction()` for bucket mutations
+- Investment multiplier validation: throws ArgumentError if ≤0
+- Immutable transaction log with full audit trail for all mutations
+- Real-time streams for buckets, children, transactions
+- Code generation ready with @riverpod annotation
+- **Orchestration Log:** `.squad/orchestration-log/2026-04-05T18-30-00Z-jarvis-models.md`
+- **Next:** Rhodey for UI integration, Fury for security rules, Happy for testing
+

@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getRole() {
+      return request.auth.token.role;
+    }
+    
+    function getFamilyId() {
+      return request.auth.token.familyId;
+    }
+    
+    function getChildId() {
+      return request.auth.token.childId;
+    }
+    
+    function isParent() {
+      return isAuthenticated() && getRole() == 'parent';
+    }
+    
+    function isChild() {
+      return isAuthenticated() && getRole() == 'child';
+    }
+    
+    function belongsToFamily(familyId) {
+      return isAuthenticated() && getFamilyId() == familyId;
+    }
+    
+    function isChildOwner(childId) {
+      return isChild() && getChildId() == childId;
+    }
+    
+    function isParentOfFamily(familyId) {
+      return isAuthenticated() && 
+             getRole() == 'parent' && 
+             getFamilyId() == familyId;
+    }
+    
+    function isFamilyMember(familyId) {
+      return isAuthenticated() && getFamilyId() == familyId;
+    }
+    
+    function isOwnerOfFamily(familyId) {
+      return isParentOfFamily(familyId);
+    }
+    
+    match /userProfiles/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+    }
+    
+    match /families/{familyId} {
+      allow read: if belongsToFamily(familyId);
+      allow write: if isParent() && belongsToFamily(familyId);
+      
+      match /children/{childId} {
+        allow read, write: if isParent() && belongsToFamily(familyId);
+        allow read: if isChildOwner(childId) && belongsToFamily(familyId);
+      }
+      
+      match /children/{childId}/buckets/{bucketType} {
+        allow read, write: if isParent() && belongsToFamily(familyId);
+        allow read: if isChildOwner(childId) && belongsToFamily(familyId);
+      }
+      
+      match /transactions/{txnId} {
+        allow read, write: if isParent() && belongsToFamily(familyId);
+        
+        allow read: if isChild() && 
+                      belongsToFamily(familyId) && 
+                      resource.data.childId == getChildId();
+        
+        allow create: if isParent() && 
+                        belongsToFamily(familyId) &&
+                        request.resource.data.type == 'investment' 
+                        ? request.resource.data.multiplier > 0 
+                        : true;
+        
+        allow create: if isParent() && 
+                        belongsToFamily(familyId) &&
+                        request.resource.data.type == 'charity_donation' 
+                        ? request.resource.data.newBalance == 0 
+                        : true;
+      }
+      
+      match /multiplierEvents/{eventId} {
+        allow read: if belongsToFamily(familyId);
+        allow create: if isParent() && 
+                        belongsToFamily(familyId) &&
+                        request.resource.data.multiplier > 0;
+        allow update, delete: if false;
+      }
+      
+      match /charityResets/{resetId} {
+        allow read: if belongsToFamily(familyId);
+        allow create: if isParent() && belongsToFamily(familyId);
+        allow update, delete: if false;
+      }
+    }
+    
+    match /invitations/{invitationId} {
+      allow create: if isParent() && 
+                      request.resource.data.familyId == getFamilyId();
+      
+      allow read: if isAuthenticated() && 
+                    request.auth.token.email == resource.data.invitedEmail;
+      
+      allow delete: if isParent() && resource.data.familyId == getFamilyId();
+    }
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
