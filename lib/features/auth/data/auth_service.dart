@@ -58,9 +58,13 @@ class AuthService {
   }
 
   Future<void> createFamily(String displayName) async {
-    final user = getCurrentUser();
+    var user = getCurrentUser();
     if (user == null) {
-      throw Exception('No authenticated user');
+      // Wait for auth state to resolve after sign-up
+      user = await _auth.authStateChanges().first;
+      if (user == null) {
+        throw Exception('No authenticated user');
+      }
     }
 
     final familyId = _firestore.collection('families').doc().id;
