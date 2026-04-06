@@ -39,16 +39,22 @@ final currentFamilyIdProvider = StreamProvider<String?>((ref) {
   });
 });
 
-/// Provider for the current user's role
-final appUserRoleProvider = Provider<AppUserRole>((ref) {
+/// Stream provider for the current user's role from Firestore userProfiles
+final appUserRoleProvider = StreamProvider<AppUserRole>((ref) {
   final authState = ref.watch(firebaseAuthStateProvider);
   final user = authState.valueOrNull;
-  
-  if (user == null) return AppUserRole.unauthenticated;
-  
-  // TODO: Fetch from Firestore user profile
-  // For now, default to parent
-  return AppUserRole.parent;
+
+  if (user == null) return Stream.value(AppUserRole.unauthenticated);
+
+  return FirebaseFirestore.instance
+      .collection('userProfiles')
+      .doc(user.uid)
+      .snapshots()
+      .map((snapshot) {
+    if (!snapshot.exists) return AppUserRole.unauthenticated;
+    final roleStr = snapshot.data()?['role'] as String?;
+    return AppUserRole.fromJson(roleStr ?? 'unauthenticated');
+  });
 });
 
 /// State provider for the currently active child (when in child mode)

@@ -10,16 +10,18 @@ import '../features/auth/presentation/child_home_screen.dart';
 import '../features/auth/presentation/child_pin_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
+import '../features/transactions/presentation/transaction_history_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(firebaseAuthStateProvider);
+  final userRoleAsync = ref.watch(appUserRoleProvider);
 
   return GoRouter(
     initialLocation: '/splash',
     redirect: (BuildContext context, GoRouterState state) {
       final isLoggedIn = authState.valueOrNull != null;
       final currentLocation = state.matchedLocation;
-      final userRole = ref.read(appUserRoleProvider);
+      final userRole = userRoleAsync.valueOrNull ?? AppUserRole.unauthenticated;
 
       // Not authenticated: redirect to login (but allow family-setup)
       if (!isLoggedIn && currentLocation != '/login' && currentLocation != '/family-setup') {
@@ -34,6 +36,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           // Child needs PIN verification
           return '/child-pin';
         }
+        // Still loading role — stay on splash briefly
+        return '/splash';
       }
 
       // Allow navigation
@@ -63,6 +67,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/child-pin',
         builder: (context, state) => const ChildPinScreen(),
+      ),
+      GoRoute(
+        path: '/transaction-history',
+        builder: (context, state) {
+          final extra = state.extra as ({String childId, String familyId, String childName});
+          return TransactionHistoryScreen(
+            childId: extra.childId,
+            familyId: extra.familyId,
+            childName: extra.childName,
+          );
+        },
       ),
     ],
   );
