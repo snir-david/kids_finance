@@ -298,13 +298,40 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
     );
   }
 
+  void _onSwitchChild() {
+    // Clear selected child and return to child picker
+    ref.read(selectedChildProvider.notifier).state = null;
+    context.go('/child-picker');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Enter PIN'),
-        centerTitle: true,
-      ),
+    // BUG-002 fix: Guard against null selectedChild
+    final activeChildId = ref.watch(selectedChildProvider);
+    if (activeChildId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/child-picker');
+      });
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text('Enter PIN'),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _onSwitchChild,
+            tooltip: 'Switch Child',
+          ),
+        ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: ConstrainedBox(
@@ -342,6 +369,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }
