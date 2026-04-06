@@ -8,6 +8,7 @@ import '../features/auth/presentation/family_setup_screen.dart';
 import '../features/auth/presentation/parent_home_screen.dart';
 import '../features/auth/presentation/child_home_screen.dart';
 import '../features/auth/presentation/child_pin_screen.dart';
+import '../features/auth/presentation/child_picker_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
@@ -33,8 +34,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (userRole == AppUserRole.parent) {
           return '/parent-home';
         } else if (userRole == AppUserRole.child) {
-          // Child needs PIN verification
-          return '/child-pin';
+          // Child needs to pick which child they are first
+          return '/child-picker';
         }
         // Still loading role — stay on splash briefly
         return '/splash';
@@ -63,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/child-home',
         builder: (context, state) => const ChildHomeScreen(),
+      ),
+      GoRoute(
+        path: '/child-picker',
+        builder: (context, state) => const ChildPickerScreen(),
       ),
       GoRoute(
         path: '/child-pin',

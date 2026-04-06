@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
 import '../../buckets/providers/buckets_providers.dart';
@@ -55,6 +56,17 @@ class ChildHomeScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.people_outline),
+                    tooltip: 'Switch Child',
+                    onPressed: () {
+                      ref.read(activeChildProvider.notifier).state = null;
+                      ref.read(selectedChildProvider.notifier).state = null;
+                      context.go('/child-picker');
+                    },
+                  ),
+                ],
               ),
               body: _buildDashboard(context, ref, familyId, child.id, child.displayName),
             );

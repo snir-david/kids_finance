@@ -62,6 +62,23 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                     ),
                   ),
                 ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) async {
+                  if (value == 'family_settings') {
+                    _showFamilySettingsDialog(context, ref, familyId);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'family_settings',
+                    child: ListTile(
+                      leading: Icon(Icons.group_add),
+                      title: Text('Invite Another Parent'),
+                    ),
+                  ),
+                ],
+              ),
               IconButton(
                 icon: const Icon(Icons.logout),
                 tooltip: 'Sign out',
@@ -1216,5 +1233,72 @@ class _DonateDialogState extends State<_DonateDialog> {
       ],
     );
   }
+}
+
+// ─── Family Settings Dialog ────────────────────────────────────────────────────
+
+void _showFamilySettingsDialog(BuildContext context, WidgetRef ref, String familyId) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(
+        children: [
+          Icon(Icons.group_add, color: Colors.deepPurple),
+          SizedBox(width: 8),
+          Text('Invite Another Parent'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Share this Family Code with another parent.',
+            style: TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'They must sign up first, then enter this code.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.deepPurple.shade200),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  'Family Code',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  familyId,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 }
 

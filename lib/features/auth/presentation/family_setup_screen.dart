@@ -12,12 +12,15 @@ class FamilySetupScreen extends ConsumerStatefulWidget {
 
 class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
   final _familyNameController = TextEditingController();
+  final _inviteCodeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isJoiningFamily = false;
 
   @override
   void dispose() {
     _familyNameController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
