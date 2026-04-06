@@ -9,8 +9,19 @@ import '../../children/providers/children_providers.dart';
 import '../../family/providers/family_providers.dart';
 import '../providers/auth_providers.dart';
 
-/// State provider for selected child ID in parent dashboard
-final selectedChildIdProvider = StateProvider<String?>((ref) => null);
+/// Notifier for selected child ID in parent dashboard
+class SelectedChildIdNotifier extends Notifier<String?> {
+  SelectedChildIdNotifier([this._initial]);
+  final String? _initial;
+
+  @override
+  String? build() => _initial;
+
+  void setState(String? value) => state = value;
+}
+
+final selectedChildIdProvider =
+    NotifierProvider<SelectedChildIdNotifier, String?>(SelectedChildIdNotifier.new);
 
 Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
   return Bucket(
@@ -45,7 +56,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
   Widget build(BuildContext context) {
     final familyIdAsync = ref.watch(currentFamilyIdProvider);
     final authState = ref.watch(firebaseAuthStateProvider);
-    final user = authState.valueOrNull;
+    final user = authState.value;
 
     return familyIdAsync.when(
       data: (familyId) {
@@ -181,7 +192,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     if (selectedChildId == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ref.read(selectedChildIdProvider.notifier).state = children.first.id;
+        ref.read(selectedChildIdProvider.notifier).setState(children.first.id);
         }
       });
     }
@@ -259,7 +270,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
               onTap: () {
-                ref.read(selectedChildIdProvider.notifier).state = child.id;
+                ref.read(selectedChildIdProvider.notifier).setState(child.id);
               },
               child: Container(
                 width: 80,
@@ -468,7 +479,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     required _MoneyMode mode,
   }) {
     final authState = ref.read(firebaseAuthStateProvider);
-    final uid = authState.valueOrNull?.uid ?? '';
+    final uid = authState.value?.uid ?? '';
     showDialog(
       context: context,
       builder: (ctx) => _MoneyDialog(
@@ -483,7 +494,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
   void _showMultiplyDialog(
       BuildContext context, String familyId, Bucket bucket) {
     final authState = ref.read(firebaseAuthStateProvider);
-    final uid = authState.valueOrNull?.uid ?? '';
+    final uid = authState.value?.uid ?? '';
     showDialog(
       context: context,
       builder: (ctx) =>
@@ -494,7 +505,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
   void _showDonateDialog(
       BuildContext context, String familyId, Bucket bucket) {
     final authState = ref.read(firebaseAuthStateProvider);
-    final uid = authState.valueOrNull?.uid ?? '';
+    final uid = authState.value?.uid ?? '';
     showDialog(
       context: context,
       builder: (ctx) =>

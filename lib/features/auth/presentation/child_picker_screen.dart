@@ -120,7 +120,7 @@ class ChildPickerScreen extends ConsumerWidget {
   Widget _buildChildCard(BuildContext context, WidgetRef ref, Child child) {
     return GestureDetector(
       onTap: () {
-        ref.read(selectedChildProvider.notifier).state = child.id;
+        ref.read(selectedChildProvider.notifier).setState(child.id);
         context.go('/child-pin');
       },
       child: Container(

@@ -117,7 +117,7 @@ void main() {
           overrides: [
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childrenProvider('family1').overrideWith((ref) => Stream.value(fakeChildren)),
-            selectedChildProvider.overrideWith((ref) => null),
+            selectedChildProvider.overrideWith(() => SelectedChildNotifier()),
           ],
           child: const MaterialApp(home: ChildPickerScreen()),
         ),

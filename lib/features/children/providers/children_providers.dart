@@ -36,5 +36,17 @@ final childProvider =
   return repository.getChildStream(params.childId, params.familyId);
 });
 
+/// Notifier for the currently selected child ID
+class SelectedChildNotifier extends Notifier<String?> {
+  SelectedChildNotifier([this._initial]);
+  final String? _initial;
+
+  @override
+  String? build() => _initial;
+
+  void setState(String? value) => state = value;
+}
+
 /// State provider for the currently selected child ID
-final selectedChildProvider = StateProvider<String?>((ref) => null);
+final selectedChildProvider =
+    NotifierProvider<SelectedChildNotifier, String?>(SelectedChildNotifier.new);

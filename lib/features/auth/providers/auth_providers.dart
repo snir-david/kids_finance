@@ -25,7 +25,7 @@ final firebaseAuthStateProvider =
 /// Stream provider for the current family ID from user profile
 final currentFamilyIdProvider = StreamProvider<String?>((ref) {
   final authState = ref.watch(firebaseAuthStateProvider);
-  final user = authState.valueOrNull;
+  final user = authState.value;
   
   if (user == null) return Stream.value(null);
   
@@ -42,7 +42,7 @@ final currentFamilyIdProvider = StreamProvider<String?>((ref) {
 /// Stream provider for the current user's role from Firestore userProfiles
 final appUserRoleProvider = StreamProvider<AppUserRole>((ref) {
   final authState = ref.watch(firebaseAuthStateProvider);
-  final user = authState.valueOrNull;
+  final user = authState.value;
 
   if (user == null) return Stream.value(AppUserRole.unauthenticated);
 
@@ -57,5 +57,17 @@ final appUserRoleProvider = StreamProvider<AppUserRole>((ref) {
   });
 });
 
+/// Notifier for the currently active child (when in child mode)
+class ActiveChildNotifier extends Notifier<String?> {
+  ActiveChildNotifier([this._initial]);
+  final String? _initial;
+
+  @override
+  String? build() => _initial;
+
+  void setState(String? value) => state = value;
+}
+
 /// State provider for the currently active child (when in child mode)
-final activeChildProvider = StateProvider<String?>((ref) => null);
+final activeChildProvider =
+    NotifierProvider<ActiveChildNotifier, String?>(ActiveChildNotifier.new);

@@ -72,8 +72,8 @@ class ChildHomeScreen extends ConsumerWidget {
                     icon: const Icon(Icons.people_outline),
                     tooltip: 'Switch Child',
                     onPressed: () {
-                      ref.read(activeChildProvider.notifier).state = null;
-                      ref.read(selectedChildProvider.notifier).state = null;
+                      ref.read(activeChildProvider.notifier).setState(null);
+                      ref.read(selectedChildProvider.notifier).setState(null);
                       context.go('/child-picker');
                     },
                   ),

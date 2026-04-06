@@ -82,7 +82,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
         switch (result) {
           case PinSuccess():
             // Set active child for session
-            ref.read(activeChildProvider.notifier).state = activeChildId;
+            ref.read(activeChildProvider.notifier).setState(activeChildId);
             context.go('/child-home');
             
           case PinWrongPin(:final attemptsRemaining):
@@ -300,7 +300,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
 
   void _onSwitchChild() {
     // Clear selected child and return to child picker
-    ref.read(selectedChildProvider.notifier).state = null;
+    ref.read(selectedChildProvider.notifier).setState(null);
     context.go('/child-picker');
   }
 

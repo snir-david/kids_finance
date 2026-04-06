@@ -14,7 +14,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            selectedChildProvider.overrideWith((ref) => 'child-123'),
+            selectedChildProvider.overrideWith(() => SelectedChildNotifier('child-123')),
             currentFamilyIdProvider
                 .overrideWith((ref) => Stream.value('family-123')),
           ],
@@ -53,7 +53,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            selectedChildProvider.overrideWith((ref) => null), // NULL state
+            selectedChildProvider.overrideWith(() => SelectedChildNotifier()), // NULL state
             currentFamilyIdProvider
                 .overrideWith((ref) => Stream.value('family-123')),
           ],
@@ -90,7 +90,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            selectedChildProvider.overrideWith((ref) => 'child-123'),
+            selectedChildProvider.overrideWith(() => SelectedChildNotifier('child-123')),
             currentFamilyIdProvider
                 .overrideWith((ref) => Stream.value('family-123')),
           ],

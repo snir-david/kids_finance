@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kids_finance/features/auth/presentation/parent_home_screen.dart';
 import 'package:kids_finance/features/auth/presentation/child_home_screen.dart';
 import 'package:kids_finance/features/auth/providers/auth_providers.dart';
@@ -131,7 +131,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => null),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier()),
           ],
           child: const MaterialApp(home: ChildHomeScreen()),
         ),
@@ -146,7 +146,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => 'child1'),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier('child1')),
             currentFamilyIdProvider.overrideWith((ref) => const Stream.empty()),
           ],
           child: const MaterialApp(home: ChildHomeScreen()),
@@ -198,7 +198,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => 'child1'),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier('child1')),
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childProvider(
               (childId: 'child1', familyId: 'family1'),
@@ -259,7 +259,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => 'child1'),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier('child1')),
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childProvider(
               (childId: 'child1', familyId: 'family1'),
@@ -321,7 +321,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => 'child1'),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier('child1')),
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childProvider(
               (childId: 'child1', familyId: 'family1'),
@@ -388,7 +388,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeChildProvider.overrideWith((ref) => 'child1'),
+            activeChildProvider.overrideWith(() => ActiveChildNotifier('child1')),
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childProvider(
               (childId: 'child1', familyId: 'family1'),

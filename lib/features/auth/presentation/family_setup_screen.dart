@@ -131,7 +131,7 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(firebaseAuthStateProvider);
-    final isAlreadyLoggedIn = authState.valueOrNull != null;
+    final isAlreadyLoggedIn = authState.value != null;
 
     return Scaffold(
       appBar: AppBar(

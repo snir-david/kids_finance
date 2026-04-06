@@ -20,9 +20,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     redirect: (BuildContext context, GoRouterState state) {
-      final isLoggedIn = authState.valueOrNull != null;
+      final isLoggedIn = authState.value != null;
       final currentLocation = state.matchedLocation;
-      final userRole = userRoleAsync.valueOrNull ?? AppUserRole.unauthenticated;
+      final userRole = userRoleAsync.value ?? AppUserRole.unauthenticated;
 
       // Not authenticated: redirect to login (but allow family-setup)
       if (!isLoggedIn && currentLocation != '/login' && currentLocation != '/family-setup') {
