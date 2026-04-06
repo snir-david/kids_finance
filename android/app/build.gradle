@@ -2,25 +2,26 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
 
 android {
     namespace = "com.kidsfinance.app"
-    compileSdk = 34
-    ndkVersion = "23.1.7779620"
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "17"
     }
 
     defaultConfig {
         applicationId = "com.kidsfinance.app"
-        minSdk = 21
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
@@ -37,4 +38,8 @@ flutter {
     source = "../.."
 }
 
-dependencies {}
+dependencies {
+     // Import the Firebase BoM
+  implementation platform('com.google.firebase:firebase-bom:34.11.0')
+  implementation 'com.google.firebase:firebase-analytics'
+}
