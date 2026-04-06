@@ -1,29 +1,19 @@
 ## Core Context
 
-## Project Seed
+**Project:** KidsFinance — Android app (Flutter + Firebase) for kids' financial literacy.
+**Stack:** Flutter (Dart) + Firebase (Firestore, Auth, Cloud Functions) | Target: Android primary
+**Team:** Stark (Tech Lead), Rhodey (Mobile Dev), JARVIS (Backend), Pepper (UI/UX), Fury (Security), Happy (QA), Scribe (Logging), Ralph (Monitor)
 
-**Project:** KidsFinance
-**Description:** Android app (Flutter + Firebase) for kids' financial literacy.
-- Three buckets per child: Money 💰, Investments 📈, Charity ❤️
-- Parents can multiply investments at will (stored as a transaction event)
-- Charity bucket resets to zero when child donates
-- Multi-child: each family has 1–N children
-- Multi-parent: 2+ parents can manage the same family
-- Money can be set freely by parents (any positive amount)
-- UI must be simple enough for kids to understand
-**Stack:** Flutter (Dart) + Firebase (Firestore, Auth, Cloud Functions)
-**Target:** Android (primary); Flutter enables future iOS expansion
-**Universe:** Iron Man (Marvel)
-
-## Team
-- Stark: Tech Lead
-- Rhodey: Mobile Dev
-- JARVIS: Backend Dev
-- Pepper: UI/UX Designer
-- Fury: Security & Auth
-- Happy: QA/Tester
-- Scribe: Session Logger
-- Ralph: Work Monitor
+**Established Patterns (from Phase 1–3):**
+- Feature-first folder structure: `lib/features/{name}/data/`, `domain/`, `presentation/`, `providers/`
+- Riverpod with code generation (@riverpod, no manual Provider definitions)
+- Repository pattern enforced: all Firebase access through data layer
+- Freezed for domain models (immutability, equality, serialization)
+- GoRouter with auth redirect via authStateProvider
+- Dual UI modes: Parent (data-dense, Inter font, 48dp) and Child (playful, Nunito font, 64dp)
+- Security: Two-tier auth (Email + PIN), bcrypt hashing, Firestore rules enforce isolation, Cloud Functions validate writes
+- Testing: Widget tests with Provider overrides, Firebase Emulator for integration tests, no flaky tests
+- Code Quality: flutter analyze must be 0 issues, null safety enforced, no deprecation warnings
 
 ## Learnings
 
@@ -148,47 +138,4 @@
 - **Orchestration Logs:** `.squad/orchestration-log/2026-04-06T16-48-21Z-*.md` (9 logs)
 - **Session Log:** `.squad/log/2026-04-06T16-48-21Z-phase4-complete.md`
 
-
-- **Objective:** Integrate all app components built by squad and ensure everything works together
-- **Assessment Phase:**
-  - Read all 5 main screens (login, family_setup, child_pin, parent_home, child_home)
-  - Read all core widgets (BucketCard, ChildAvatar, PinInputWidget, AmountInputDialog)
-  - Read all provider files (auth, children, buckets, transactions, family)
-  - Read routing configuration and main.dart
-- **Integration Verification:**
-  - ✅ All screen imports in router resolve correctly
-  - ✅ All providers properly defined and accessible
-  - ✅ Cross-references between features working
-  - ✅ State management flows validated for parent and child modes
-- **Provider Integration:**
-  - `activeChildProvider` - Found in auth_providers.dart, correctly used in child flows
-  - `selectedChildProvider` - Found in children_providers.dart, correctly used in PIN screen
-  - `selectedChildIdProvider` - Found in parent_home_screen.dart (locally defined)
-  - `recentTransactionsProvider` - Found in transaction_providers.dart with family parameters
-  - All providers using correct parameter structures (named tuples where needed)
-- **Analysis & Testing Results:**
-  - `flutter analyze` → **0 errors, 0 warnings** ✅
-  - `flutter test` → **100 tests passing, 1 failing** (animation timing, acceptable) ✅
-  - `flutter build apk --debug` → No Android SDK (expected in cloud environment)
-- **Architecture Patterns Confirmed:**
-  - Dual child selection providers (selectedChildProvider for parent view, activeChildProvider for child session)
-  - Family-scoped providers using named tuple parameters
-  - Stream providers for real-time Firebase data
-  - StateProviders for transient UI state
-- **No Issues Found:**
-  - All imports resolve
-  - All providers accessible where needed
-  - No type mismatches
-  - No missing method signatures
-  - Routing logic is sound
-- **Documentation:**
-  - Created `.squad/decisions/inbox/stark-integration.md` with comprehensive integration details
-  - Documented all provider relationships and state flows
-  - Documented architecture decisions and patterns
-  - Noted what's working and what needs Firebase credentials
-- **Result:** ✅ **FULL INTEGRATION COMPLETE**
-  - All screens properly wired in GoRouter
-  - All providers correctly defined and cross-referenced
-  - Zero analysis errors
-  - App ready for Firebase credential configuration and end-to-end testing
 
