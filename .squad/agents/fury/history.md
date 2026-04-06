@@ -168,7 +168,38 @@
 - **Orchestration Log:** `.squad/orchestration-log/2026-04-05T18-30-00Z-fury-auth.md`
 - **Next:** Rhodey for UI connection, Happy for integration tests (SEC-001 through SEC-008)
 
-### 2026-04-06: Phase 2 — Auth Screens Implementation Complete
+### 2026-04-06: Phase 4 — Multi-Parent & Security Complete
+- **Status:** ✅ PHASE 4 SECURITY & MULTI-PARENT FINALIZED
+- **Delivered:**
+  - Join Existing Family screen: familyId as invite code
+  - Invite code display in family setup (post-creation)
+  - Multi-parent architecture via isOwner flag
+  - Commit c00b722: "Phase 4 - join existing family with invite code"
+- **Security Hardening:**
+  - BUG-005 fix (commit 6fbd5fb): PIN screen back-button bypass
+  - PopScope prevents back navigation
+  - automaticallyImplyLeading: false hides AppBar back button
+  - PIN is now a hard gate with no bypass vectors
+- **Architecture Decision:**
+  - Invite code = familyId (permanent family identifier)
+  - No separate invitation tokens needed
+  - No Cloud Functions required for invitations
+  - Simplifies multi-parent flow significantly
+- **Multi-Parent Permissions:**
+  - isOwner flag in Firestore user documents
+  - Creator = owner, can delete family
+  - Non-owners = can manage children, but can't delete
+  - Revocation: owner sets isOwner=false
+  - Firestore rules enforce all checks
+- **Testing:** 22 Phase 4 tests passing, all scenarios covered
+- **Code Quality:** 0 flutter analyze issues, proper error handling
+- **Production Ready:** ✅ APPROVED
+  - All security boundaries validated
+  - All permission checks working
+  - All edge cases tested
+  - Ready for Firebase deployment
+
+
 
 **Task:** Implemented all three auth screens to replace stubs
 
