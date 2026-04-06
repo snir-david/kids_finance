@@ -73,7 +73,7 @@ class AuthService {
 
     batch.set(_firestore.collection('families').doc(familyId), {
       'name': displayName,
-      'parentUids': [user.uid],
+      'parentIds': [user.uid],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
       'schemaVersion': '1.0.0',
