@@ -14,14 +14,19 @@ class FamilySetupScreen extends ConsumerStatefulWidget {
 class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
   final _familyNameController = TextEditingController();
   final _inviteCodeController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isJoiningFamily = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _familyNameController.dispose();
     _inviteCodeController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -32,8 +37,23 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
+
+      // Sign up first if not already authenticated
+      var user = authService.getCurrentUser();
+      if (user == null) {
+        await authService.createAccountWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        user = authService.getCurrentUser();
+        // Wait for auth state to fully settle
+        user ??= await authService.authStateChanges().firstWhere((u) => u != null);
+      }
+
+      if (user == null) throw Exception('Sign-up failed. Please try again.');
+
       await authService.createFamily(_familyNameController.text.trim());
-      
+
       if (mounted) {
         context.go('/parent-home');
       }
@@ -60,10 +80,19 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      final user = authService.getCurrentUser();
+
+      // Sign up first if not already authenticated
+      var user = authService.getCurrentUser();
       if (user == null) {
-        throw Exception('No authenticated user');
+        await authService.createAccountWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        user = authService.getCurrentUser();
+        user ??= await authService.authStateChanges().firstWhere((u) => u != null);
       }
+
+      if (user == null) throw Exception('Sign-up failed. Please try again.');
 
       final inviteCode = _inviteCodeController.text.trim();
       
@@ -101,12 +130,15 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(firebaseAuthStateProvider);
+    final isAlreadyLoggedIn = authState.valueOrNull != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isJoiningFamily ? 'Join a Family' : 'Create Your Family'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
@@ -125,15 +157,15 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _isJoiningFamily
-                      ? 'Enter your family invite code'
-                      : "Let's create your family profile",
+                      ? 'Create an account and join your family'
+                      : "Create an account to get started",
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 // Toggle between Create and Join
                 Row(
                   children: [
@@ -174,14 +206,63 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 48),
-                Icon(
-                  _isJoiningFamily ? Icons.group_add : Icons.family_restroom,
-                  size: 100,
-                  color: _isJoiningFamily ? Colors.deepPurple : Colors.green,
-                ),
-                const SizedBox(height: 48),
-                // Conditional form field
+                const SizedBox(height: 32),
+
+                // Email + password fields for new users
+                if (!isAlreadyLoggedIn) ...[
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    enabled: !_isLoading,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    obscureText: _obscurePassword,
+                    enabled: !_isLoading,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Family name or invite code
                 if (_isJoiningFamily)
                   TextFormField(
                     controller: _inviteCodeController,
@@ -242,7 +323,7 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
                           style: const TextStyle(fontSize: 18),
                         ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 24),
                 Text(
                   _isJoiningFamily
                       ? 'Ask another parent to share their Family Code from the app settings.'
@@ -253,6 +334,7 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
