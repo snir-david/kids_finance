@@ -1,117 +1,78 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getRole() {
-      return request.auth.token.role;
-    }
-    
-    function getFamilyId() {
-      return request.auth.token.familyId;
-    }
-    
-    function getChildId() {
-      return request.auth.token.childId;
-    }
-    
-    function isParent() {
-      return isAuthenticated() && getRole() == 'parent';
-    }
-    
-    function isChild() {
-      return isAuthenticated() && getRole() == 'child';
-    }
-    
-    function belongsToFamily(familyId) {
-      return isAuthenticated() && getFamilyId() == familyId;
-    }
-    
-    function isChildOwner(childId) {
-      return isChild() && getChildId() == childId;
-    }
-    
+
+    // Check if the authenticated user is listed as a parent in the family doc.
+    // This replaces custom-claim checks so the app works without Cloud Functions.
     function isParentOfFamily(familyId) {
-      return isAuthenticated() && 
-             getRole() == 'parent' && 
-             getFamilyId() == familyId;
+      return isAuthenticated() &&
+             request.auth.uid in
+               get(/databases/$(database)/documents/families/$(familyId)).data.parentIds;
     }
-    
-    function isFamilyMember(familyId) {
-      return isAuthenticated() && getFamilyId() == familyId;
-    }
-    
-    function isOwnerOfFamily(familyId) {
-      return isParentOfFamily(familyId);
-    }
-    
+
+    // ── User Profiles ─────────────────────────────────────────────────────────
+    // Each parent user can read/write only their own profile.
+
     match /userProfiles/{uid} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
-      allow write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
-    
+
+    // ── Families ──────────────────────────────────────────────────────────────
+
     match /families/{familyId} {
-      allow read: if belongsToFamily(familyId);
-      allow write: if isParent() && belongsToFamily(familyId);
-      
+      // Any parent in this family can read the family doc.
+      allow read: if isParentOfFamily(familyId);
+      // Any parent can update the family (e.g. add children, add co-parent).
+      allow write: if isParentOfFamily(familyId);
+      // Allow the initial creation by any authenticated user (first-time setup).
+      allow create: if isAuthenticated() &&
+                       request.auth.uid in request.resource.data.parentIds;
+
+      // ── Children ────────────────────────────────────────────────────────────
+
       match /children/{childId} {
-        allow read, write: if isParent() && belongsToFamily(familyId);
-        allow read: if isChildOwner(childId) && belongsToFamily(familyId);
+        allow read, write: if isParentOfFamily(familyId);
       }
-      
+
+      // ── Buckets ─────────────────────────────────────────────────────────────
+
       match /children/{childId}/buckets/{bucketType} {
-        allow read, write: if isParent() && belongsToFamily(familyId);
-        allow read: if isChildOwner(childId) && belongsToFamily(familyId);
+        allow read, write: if isParentOfFamily(familyId);
       }
-      
+
+      // ── Transactions (append-only log) ───────────────────────────────────────
+
       match /transactions/{txnId} {
-        allow read, write: if isParent() && belongsToFamily(familyId);
-        
-        allow read: if isChild() && 
-                      belongsToFamily(familyId) && 
-                      resource.data.childId == getChildId();
-        
-        allow create: if isParent() && 
-                        belongsToFamily(familyId) &&
-                        request.resource.data.type == 'investment' 
-                        ? request.resource.data.multiplier > 0 
-                        : true;
-        
-        allow create: if isParent() && 
-                        belongsToFamily(familyId) &&
-                        request.resource.data.type == 'charity_donation' 
-                        ? request.resource.data.newBalance == 0 
-                        : true;
+        allow read:   if isParentOfFamily(familyId);
+        // Parents can create transactions; no edits/deletes allowed.
+        allow create: if isParentOfFamily(familyId);
+        allow update, delete: if false;
       }
-      
+
+      // ── Misc event logs ──────────────────────────────────────────────────────
+
       match /multiplierEvents/{eventId} {
-        allow read: if belongsToFamily(familyId);
-        allow create: if isParent() && 
-                        belongsToFamily(familyId) &&
-                        request.resource.data.multiplier > 0;
+        allow read:   if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId) &&
+                         request.resource.data.multiplier > 0;
         allow update, delete: if false;
       }
-      
+
       match /charityResets/{resetId} {
-        allow read: if belongsToFamily(familyId);
-        allow create: if isParent() && belongsToFamily(familyId);
+        allow read:   if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId);
         allow update, delete: if false;
       }
     }
-    
-    match /invitations/{invitationId} {
-      allow create: if isParent() && 
-                      request.resource.data.familyId == getFamilyId();
-      
-      allow read: if isAuthenticated() && 
-                    request.auth.token.email == resource.data.invitedEmail;
-      
-      allow delete: if isParent() && resource.data.familyId == getFamilyId();
-    }
-    
+
+    // ── Deny everything else ──────────────────────────────────────────────────
+
     match /{document=**} {
       allow read, write: if false;
     }
