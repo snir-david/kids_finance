@@ -9,6 +9,17 @@ import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/auth_providers.dart';
 
+Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
+  return Bucket(
+    id: '',
+    childId: childId,
+    familyId: familyId,
+    type: type,
+    balance: 0,
+    lastUpdatedAt: DateTime.now(),
+  );
+}
+
 class ChildHomeScreen extends ConsumerWidget {
   const ChildHomeScreen({super.key});
 
@@ -108,36 +119,15 @@ class ChildHomeScreen extends ConsumerWidget {
       data: (buckets) {
         final moneyBucket = buckets.firstWhere(
           (b) => b.type == BucketType.money,
-          orElse: () => Bucket(
-            id: '',
-            childId: childId,
-            familyId: familyId,
-            type: BucketType.money,
-            balance: 0,
-            lastUpdatedAt: DateTime.now(),
-          ),
+          orElse: () => _createEmptyBucket(BucketType.money, childId, familyId),
         );
         final investmentBucket = buckets.firstWhere(
           (b) => b.type == BucketType.investment,
-          orElse: () => Bucket(
-            id: '',
-            childId: childId,
-            familyId: familyId,
-            type: BucketType.investment,
-            balance: 0,
-            lastUpdatedAt: DateTime.now(),
-          ),
+          orElse: () => _createEmptyBucket(BucketType.investment, childId, familyId),
         );
         final charityBucket = buckets.firstWhere(
           (b) => b.type == BucketType.charity,
-          orElse: () => Bucket(
-            id: '',
-            childId: childId,
-            familyId: familyId,
-            type: BucketType.charity,
-            balance: 0,
-            lastUpdatedAt: DateTime.now(),
-          ),
+          orElse: () => _createEmptyBucket(BucketType.charity, childId, familyId),
         );
 
         final total = moneyBucket.balance + investmentBucket.balance + charityBucket.balance;

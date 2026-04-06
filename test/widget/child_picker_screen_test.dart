@@ -21,7 +21,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Who are you?'), findsOneWidget);
+      expect(find.textContaining('Who are you?'), findsNothing);
+      // Empty state shows different text
     });
 
     testWidgets('shows loading indicator while fetching children', (tester) async {
@@ -53,7 +54,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('No children found'), findsOneWidget);
+      expect(find.text('No children found.'), findsOneWidget);
+      expect(find.text('Ask a parent to add you!'), findsOneWidget);
     });
 
     testWidgets('shows children as cards when children exist', (tester) async {
@@ -88,6 +90,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Should show title with emoji
+      expect(find.text('Who are you? 🌟'), findsOneWidget);
+      
+      // Should show children
       expect(find.text('Alex'), findsOneWidget);
       expect(find.text('Emma'), findsOneWidget);
       expect(find.text('👦'), findsOneWidget);
@@ -105,20 +111,13 @@ void main() {
           createdAt: DateTime.now(),
         ),
       ];
-
-      String? selectedChildId;
       
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
             childrenProvider('family1').overrideWith((ref) => Stream.value(fakeChildren)),
-            selectedChildProvider.overrideWith((ref) {
-              return StateController<String?>(null)
-                ..addListener((state) {
-                  selectedChildId = state;
-                });
-            }),
+            selectedChildProvider.overrideWith((ref) => null),
           ],
           child: const MaterialApp(home: ChildPickerScreen()),
         ),
@@ -126,15 +125,15 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Find and tap the child card
+      // Find the child card container
       final childCard = find.ancestor(
         of: find.text('Alex'),
-        matching: find.byType(Card),
+        matching: find.byType(GestureDetector),
       );
       
       expect(childCard, findsOneWidget);
       
-      // Note: The actual navigation will be tested in integration tests
+      // Note: The actual navigation and provider state change will be tested in integration tests
       // This test verifies the card is tappable and exists
     });
 

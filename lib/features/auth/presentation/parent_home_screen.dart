@@ -12,11 +12,26 @@ import '../providers/auth_providers.dart';
 /// State provider for selected child ID in parent dashboard
 final selectedChildIdProvider = StateProvider<String?>((ref) => null);
 
+Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
+  return Bucket(
+    id: '',
+    childId: childId,
+    familyId: familyId,
+    type: type,
+    balance: 0,
+    lastUpdatedAt: DateTime.now(),
+  );
+}
+
 // ─── Available emoji options for new children ────────────────────────────────
 const _kAvatarEmojis = [
   '🦁', '🐯', '🐻', '🐼', '🐸', '🦊', '🐶', '🐱',
   '🐮', '🐷', '🦄', '🐙', '🦋', '🐠', '🦕',
 ];
+
+// PIN constraints
+const int _kMinPinLength = 4;
+const int _kMaxPinLength = 6;
 
 class ParentHomeScreen extends ConsumerStatefulWidget {
   const ParentHomeScreen({super.key});
@@ -159,17 +174,20 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
       );
     }
 
-    // Auto-select first child if none selected
     final selectedChildId = ref.watch(selectedChildIdProvider);
-    if (selectedChildId == null && children.isNotEmpty) {
+    final effectiveChildId = selectedChildId ?? children.first.id;
+
+    // Auto-select first child if none selected
+    if (selectedChildId == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(selectedChildIdProvider.notifier).state = children.first.id;
+        if (mounted) {
+          ref.read(selectedChildIdProvider.notifier).state = children.first.id;
+        }
       });
-      return const Center(child: CircularProgressIndicator());
     }
 
     final selectedChild = children.firstWhere(
-      (c) => c.id == selectedChildId,
+      (c) => c.id == effectiveChildId,
       orElse: () => children.first,
     );
 
@@ -299,14 +317,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
       data: (buckets) {
         Bucket bucket(BucketType t) => buckets.firstWhere(
               (b) => b.type == t,
-              orElse: () => Bucket(
-                id: '',
-                childId: child.id,
-                familyId: familyId,
-                type: t,
-                balance: 0,
-                lastUpdatedAt: DateTime.now(),
-              ),
+              orElse: () => _createEmptyBucket(t, child.id, familyId),
             );
 
         final moneyBucket = bucket(BucketType.money);
@@ -653,8 +664,8 @@ class _AddChildDialogState extends State<_AddChildDialog> {
       setState(() => _error = 'Please enter a name');
       return;
     }
-    if (pin.length < 4 || pin.length > 6 || !RegExp(r'^\d+$').hasMatch(pin)) {
-      setState(() => _error = 'PIN must be 4–6 digits');
+    if (pin.length < _kMinPinLength || pin.length > _kMaxPinLength || !RegExp(r'^\d+$').hasMatch(pin)) {
+      setState(() => _error = 'PIN must be $_kMinPinLength–$_kMaxPinLength digits');
       return;
     }
     if (pin != confirmPin) {
@@ -745,9 +756,9 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               controller: _pinController,
               keyboardType: TextInputType.number,
               obscureText: true,
-              maxLength: 6,
-              decoration: const InputDecoration(
-                labelText: 'PIN (4–6 digits)',
+              maxLength: _kMaxPinLength,
+              decoration: InputDecoration(
+                labelText: 'PIN ($_kMinPinLength–$_kMaxPinLength digits)',
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -757,7 +768,7 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               controller: _confirmPinController,
               keyboardType: TextInputType.number,
               obscureText: true,
-              maxLength: 6,
+              maxLength: _kMaxPinLength,
               decoration: const InputDecoration(
                 labelText: 'Confirm PIN',
                 border: OutlineInputBorder(),

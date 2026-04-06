@@ -5,6 +5,8 @@ import '../providers/auth_providers.dart';
 import '../data/pin_service.dart';
 import '../../children/providers/children_providers.dart';
 
+const double _kShakeOffset = 10.0;
+
 class ChildPinScreen extends ConsumerStatefulWidget {
   const ChildPinScreen({super.key});
 
@@ -27,7 +29,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _shakeAnimation = Tween<double>(begin: 0, end: 10).animate(
+    _shakeAnimation = Tween<double>(begin: 0, end: _kShakeOffset).animate(
       CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
     );
   }
