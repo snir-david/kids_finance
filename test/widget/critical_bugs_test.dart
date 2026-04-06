@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kids_finance/features/auth/presentation/child_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kids_finance/features/auth/providers/auth_providers.dart';
 import 'package:kids_finance/features/children/providers/children_providers.dart';
 
@@ -47,7 +48,7 @@ void main() {
     testWidgets(
         'BUG-002: PIN screen redirects to picker when selectedChild is null',
         (tester) async {
-      bool redirected = false;
+      var redirected = false;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -56,34 +57,32 @@ void main() {
             currentFamilyIdProvider
                 .overrideWith((ref) => Stream.value('family-123')),
           ],
-          child: MaterialApp(
-            home: const ChildPinScreen(),
-            onGenerateRoute: (settings) {
-              if (settings.name == '/child-picker') {
-                redirected = true;
-                return MaterialPageRoute(
-                  builder: (_) => const Scaffold(
-                    body: Text('Child Picker'),
-                  ),
-                );
-              }
-              return null;
-            },
+          child: MaterialApp.router(
+            routerConfig: GoRouter(
+              initialLocation: '/child-pin',
+              routes: [
+                GoRoute(
+                  path: '/child-pin',
+                  builder: (context, state) => const ChildPinScreen(),
+                ),
+                GoRoute(
+                  path: '/child-picker',
+                  builder: (context, state) {
+                    redirected = true;
+                    return const Scaffold(
+                      body: Text('Child Picker'),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Verify: Screen should show error message or redirect
-      // Current implementation throws exception - BUG confirmed
-      expect(
-        find.text('No child selected'),
-        findsOneWidget,
-        reason: 'Should show error message when selectedChild is null',
-      );
-
-      // After fix is implemented, check for redirect
-      // expect(redirected, isTrue, reason: 'Should redirect to child picker');
+      // Verify redirect happened
+      expect(redirected, isTrue, reason: 'Should redirect to child picker');
     });
 
     testWidgets('BUG-005: PIN screen prevents back navigation',

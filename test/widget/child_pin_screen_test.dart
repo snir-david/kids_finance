@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kids_finance/features/auth/presentation/child_pin_screen.dart';
 import 'package:kids_finance/features/auth/providers/auth_providers.dart';
 import 'package:kids_finance/features/children/providers/children_providers.dart';
@@ -178,13 +179,30 @@ void main() {
             selectedChildProvider.overrideWith((ref) => null),
             currentFamilyIdProvider.overrideWith((ref) => Stream.value('family1')),
           ],
-          child: const MaterialApp(home: ChildPinScreen()),
+          child: MaterialApp.router(
+            routerConfig: GoRouter(
+              initialLocation: '/child-pin',
+              routes: [
+                GoRoute(
+                  path: '/child-pin',
+                  builder: (context, state) => const ChildPinScreen(),
+                ),
+                GoRoute(
+                  path: '/child-picker',
+                  builder: (context, state) => const Scaffold(
+                    body: Text('Child Picker'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Enter PIN'), findsOneWidget);
+      // Should redirect to child picker - verify we see the picker screen
+      expect(find.text('Child Picker'), findsOneWidget);
     });
   });
 }
