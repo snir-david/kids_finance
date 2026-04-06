@@ -3,6 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/app_user.dart';
+import '../data/auth_service.dart';
+import '../data/pin_service.dart';
+
+/// Provider for AuthService
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService();
+});
+
+/// Provider for PinService
+final pinServiceProvider = Provider<PinService>((ref) {
+  return PinService();
+});
 
 /// Watches Firebase auth state and emits User or null
 final firebaseAuthStateProvider =

@@ -27,3 +27,49 @@
 
 ## Learnings
 
+### 2025-01-XX: Phase 2 Dashboard Implementation
+
+**What I Built:**
+1. **ParentHomeScreen** (`lib/features/auth/presentation/parent_home_screen.dart`)
+   - Full parent dashboard with family name in AppBar
+   - Horizontal child selector with emoji avatars and selection highlighting
+   - Selected child's bucket display (Money 💰, Investment 📈, Charity ❤️)
+   - Action buttons: Set Money, Multiply Investment, Donate Charity
+   - Inline action dialogs with validation (amounts > 0, multipliers > 0)
+   - Loading/error/empty states handled
+   - Uses Inter font (parent mode), 48dp touch targets, clean data-dense layout
+
+2. **ChildHomeScreen** (`lib/features/auth/presentation/child_home_screen.dart`)
+   - Kid-friendly dashboard with "Hi [name]! 👋" greeting
+   - Total wealth summary card with gradient background
+   - Big Money bucket card (primary focus)
+   - Side-by-side Investment and Charity cards (smaller)
+   - Recent transaction history (last 3) with emoji + descriptions
+   - Relative time formatting (5m ago, 2h ago, Yesterday)
+   - Uses Nunito font (kid mode), 64dp touch targets, playful colorful design
+   - Bucket colors: Money=#4CAF50, Investment=#2196F3, Charity=#E91E63
+
+3. **ChildSelectorWidget** (`lib/features/children/presentation/child_selector_widget.dart`)
+   - Reusable horizontal child selector
+   - Animated selection highlighting with scale/shadow effects
+   - Avatar emoji + child name display
+   - Responsive to tap with visual feedback
+
+**Provider Integration:**
+- `selectedChildIdProvider` - StateProvider for parent's selected child
+- `currentFamilyIdProvider` - gets family from auth
+- `childrenProvider(familyId)` - stream of all children
+- `childBucketsProvider((childId, familyId))` - stream of child's buckets
+- `recentTransactionsProvider((childId, familyId))` - last 10 transactions
+- `activeChildProvider` - currently logged-in child (for kid mode)
+
+**Key Design Decisions:**
+- Inlined bucket/avatar widgets since core widgets being built by Pepper in parallel
+- Used `withValues(alpha: X)` instead of deprecated `withOpacity(X)` for Flutter 3.27+
+- Action dialogs placeholder TODO comments for Phase 3 repository wiring
+- Auto-select first child on parent dashboard load if none selected
+- Transaction descriptions use pattern matching on TransactionType enum
+- Empty states show helpful CTAs ("Add your first child")
+
+**Flutter Analyze:** ✅ All issues fixed - no errors or warnings
+

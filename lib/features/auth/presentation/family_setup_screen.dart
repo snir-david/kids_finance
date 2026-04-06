@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/auth_providers.dart';
 
 class FamilySetupScreen extends ConsumerStatefulWidget {
   const FamilySetupScreen({super.key});
@@ -25,14 +27,19 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement family creation
-      // final authService = ref.read(authServiceProvider);
-      // await authService.createFamily(_familyNameController.text.trim());
-      // Navigate to dashboard or add children screen
+      final authService = ref.read(authServiceProvider);
+      await authService.createFamily(_familyNameController.text.trim());
+      
+      if (mounted) {
+        context.go('/parent-home');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create family: $e')),
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -56,23 +63,18 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.family_restroom,
-                  size: 100,
-                  color: Colors.green,
-                ),
                 const SizedBox(height: 32),
                 const Text(
-                  "Let's set up your family!",
+                  'Welcome to KidsFinance! 🎉',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  "What would you like to call your family?",
+                  "Let's create your family profile",
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
@@ -80,15 +82,22 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
+                const Icon(
+                  Icons.family_restroom,
+                  size: 100,
+                  color: Colors.green,
+                ),
+                const SizedBox(height: 48),
                 TextFormField(
                   controller: _familyNameController,
                   decoration: const InputDecoration(
                     labelText: 'Family Name',
-                    hintText: 'e.g., Smith Family',
+                    hintText: 'e.g., The Smith Family',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.home),
                   ),
                   textCapitalization: TextCapitalization.words,
+                  enabled: !_isLoading,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter a family name';

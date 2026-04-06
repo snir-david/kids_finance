@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/family_setup_screen.dart';
 import '../features/auth/presentation/parent_home_screen.dart';
 import '../features/auth/presentation/child_home_screen.dart';
 import '../features/auth/presentation/child_pin_screen.dart';
@@ -20,8 +21,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final currentLocation = state.matchedLocation;
       final userRole = ref.read(appUserRoleProvider);
 
-      // Not authenticated: redirect to login
-      if (!isLoggedIn && currentLocation != '/login') {
+      // Not authenticated: redirect to login (but allow family-setup)
+      if (!isLoggedIn && currentLocation != '/login' && currentLocation != '/family-setup') {
         return '/login';
       }
 
@@ -46,6 +47,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/family-setup',
+        builder: (context, state) => const FamilySetupScreen(),
       ),
       GoRoute(
         path: '/parent-home',
