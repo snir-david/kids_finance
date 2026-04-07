@@ -33,6 +33,16 @@ service cloud.firestore {
       return request.resource.data.balance >= 0;
     }
 
+    // Check if the authenticated user's JWT claims identify them as a specific
+    // child within the family. Currently children do not hold Firebase Auth
+    // accounts, so this always evaluates to false in production. It is defined
+    // here to satisfy the goals rule structure and for future extension.
+    function isChildOfFamily(familyId, childId) {
+      return isAuthenticated() &&
+             request.auth.token.get('familyId', '') == familyId &&
+             request.auth.token.get('childId', '') == childId;
+    }
+
     // Validates a child document on creation.
     function validChildCreate() {
       let d = request.resource.data;
@@ -106,6 +116,14 @@ service cloud.firestore {
         allow read:   if isParentOfFamily(familyId);
         allow create: if isParentOfFamily(familyId);
         allow update, delete: if false;
+      }
+
+      // ── Savings Goals ────────────────────────────────────────────────────────
+      // Parents manage goals; children can read their own goals.
+
+      match /children/{childId}/goals/{goalId} {
+        allow read: if isParentOfFamily(familyId) || isChildOfFamily(familyId, childId);
+        allow create, update, delete: if isParentOfFamily(familyId);
       }
     }
 
