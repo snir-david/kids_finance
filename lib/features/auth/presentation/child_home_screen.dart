@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -10,6 +11,11 @@ import '../../buckets/presentation/widgets/bucket_action_sheets.dart';
 import '../../buckets/presentation/widgets/celebration_overlay.dart';
 import '../../buckets/providers/buckets_providers.dart';
 import '../../children/providers/children_providers.dart';
+import '../../badges/data/models/badge_model.dart';
+import '../../badges/data/repositories/badge_repository_provider.dart';
+import '../../badges/presentation/providers/badges_provider.dart';
+import '../../badges/presentation/widgets/badge_chip.dart';
+import '../../badges/presentation/widgets/badge_shelf.dart';
 import '../../goals/data/models/goal_model.dart';
 import '../../goals/data/repositories/goal_repository_provider.dart';
 import '../../goals/presentation/providers/goals_provider.dart';
@@ -42,6 +48,10 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
   /// Tracks which completed goals have already triggered a celebration,
   /// to avoid showing the overlay more than once per goal.
   final _celebratedGoalIds = <String>{};
+
+  /// Tracks which newly-earned badges have already shown a celebration,
+  /// to avoid re-triggering on rebuild.
+  final _celebratedBadgeIds = <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -158,6 +168,15 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
       familyId: familyId,
     )));
     final repo = ref.read(bucketRepositoryProvider);
+
+    // Watch badges so we can trigger celebration for newly earned ones.
+    final badgesAsync = ref.watch(badgesProvider((
+      childId: childId,
+      familyId: familyId,
+    )));
+    badgesAsync.whenData((badges) {
+      _checkAndCelebrateBadges(context, badges, familyId, childId);
+    });
 
     return bucketsAsync.when(
       data: (buckets) {
@@ -296,6 +315,11 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
 
                     // Savings Goals section
                     _buildGoalsSection(context, familyId, childId, moneyBucket.balance),
+
+                    const SizedBox(height: 24),
+
+                    // Achievement Badges shelf
+                    BadgeShelf(familyId: familyId, childId: childId),
 
                     const SizedBox(height: 24),
                   ],
@@ -708,5 +732,182 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
       if (entry.mounted) entry.remove();
     });
   }
+
+  // ─── Badge Celebrations ───────────────────────────────────────────────────
+
+  void _checkAndCelebrateBadges(
+    BuildContext context,
+    List<Badge> badges,
+    String familyId,
+    String childId,
+  ) {
+    for (final badge in badges) {
+      if (!badge.seen && !_celebratedBadgeIds.contains(badge.id)) {
+        _celebratedBadgeIds.add(badge.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showBadgeCelebration(context, badge, familyId, childId);
+          }
+        });
+      }
+    }
+  }
+
+  void _showBadgeCelebration(
+    BuildContext context,
+    Badge badge,
+    String familyId,
+    String childId,
+  ) {
+    showGeneralDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      barrierDismissible: false,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (ctx, _, __) => _BadgeCelebrationDialog(
+        badge: badge,
+        familyId: familyId,
+        childId: childId,
+      ),
+    );
+  }
 }
 
+// ─── Badge Celebration Dialog ─────────────────────────────────────────────────
+
+class _BadgeCelebrationDialog extends ConsumerStatefulWidget {
+  const _BadgeCelebrationDialog({
+    required this.badge,
+    required this.familyId,
+    required this.childId,
+  });
+
+  final Badge badge;
+  final String familyId;
+  final String childId;
+
+  @override
+  ConsumerState<_BadgeCelebrationDialog> createState() =>
+      _BadgeCelebrationDialogState();
+}
+
+class _BadgeCelebrationDialogState
+    extends ConsumerState<_BadgeCelebrationDialog> {
+  bool _dismissed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-dismiss after 3 seconds.
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && !_dismissed) _dismiss();
+    });
+  }
+
+  void _dismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
+    ref
+        .read(badgeRepositoryProvider)
+        .markSeen(widget.familyId, widget.childId, widget.badge.id);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final badgeName = badgeLocalizedName(l10n, widget.badge.type);
+    final badgeDesc = badgeLocalizedDescription(l10n, widget.badge.type);
+
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 🎉 header
+                Text(
+                  '🎉',
+                  style: const TextStyle(fontSize: 40),
+                ),
+                const SizedBox(height: 8),
+
+                // Title
+                Text(
+                  l10n.badgeUnlocked,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.primary,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+
+                // Large animated badge emoji
+                Text(
+                  widget.badge.emoji,
+                  style: const TextStyle(fontSize: 80),
+                )
+                    .animate()
+                    .scale(
+                      begin: const Offset(0.1, 0.1),
+                      end: const Offset(1.0, 1.0),
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.elasticOut,
+                    )
+                    .fadeIn(duration: const Duration(milliseconds: 200)),
+
+                const SizedBox(height: 16),
+
+                // Badge name
+                Text(
+                  badgeName,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+
+                // Description
+                Text(
+                  badgeDesc,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // Awesome! button
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _dismiss,
+                    child: const Text('⭐  Awesome!'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

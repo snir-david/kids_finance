@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
+import '../../badges/data/services/badge_evaluation_service.dart';
 import '../../../core/offline/connectivity_service.dart';
 import '../../../core/offline/offline_queue.dart';
 import '../../../core/offline/pending_operation.dart';
@@ -10,14 +12,17 @@ class FirebaseBucketRepository implements BucketRepository {
   final FirebaseFirestore _firestore;
   final ConnectivityService _connectivity;
   final OfflineQueue _queue;
+  final BadgeEvaluationService? _badgeService;
 
   FirebaseBucketRepository({
     FirebaseFirestore? firestore,
     required ConnectivityService connectivity,
     required OfflineQueue queue,
+    BadgeEvaluationService? badgeService,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _connectivity = connectivity,
-        _queue = queue;
+        _queue = queue,
+        _badgeService = badgeService;
 
   @override
   Stream<List<Bucket>> getBucketsStream({
@@ -115,6 +120,9 @@ class FirebaseBucketRepository implements BucketRepository {
       // Log transaction
       transaction.set(transactionRef, txn.toJson()..remove('id'));
     });
+
+    unawaited(_badgeService?.evaluateAfterDeposit(familyId, childId, newBalance));
+    unawaited(_badgeService?.evaluateStreak(familyId, childId));
   }
 
   @override
@@ -193,6 +201,8 @@ class FirebaseBucketRepository implements BucketRepository {
       // Log transaction
       transaction.set(transactionRef, txn.toJson()..remove('id'));
     });
+
+    unawaited(_badgeService?.evaluateAfterInvestmentMultiply(familyId, childId));
   }
 
   @override
@@ -263,6 +273,8 @@ class FirebaseBucketRepository implements BucketRepository {
       // Log transaction
       transaction.set(transactionRef, txn.toJson()..remove('id'));
     });
+
+    unawaited(_badgeService?.evaluateAfterDonation(familyId, childId));
   }
 
   @override
@@ -306,12 +318,15 @@ class FirebaseBucketRepository implements BucketRepository {
     final transactionRef =
         _firestore.collection('families').doc(familyId).collection('transactions').doc();
 
+    double addedNewBalance = 0.0;
+
     await _firestore.runTransaction((transaction) async {
       // Get current balance
       final bucketSnapshot = await transaction.get(bucketRef);
       final currentBalance = (bucketSnapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
 
       final newBalance = currentBalance + amount;
+      addedNewBalance = newBalance;
       final now = DateTime.now();
 
       // Create transaction log
@@ -339,6 +354,9 @@ class FirebaseBucketRepository implements BucketRepository {
       // Log transaction
       transaction.set(transactionRef, txn.toJson()..remove('id'));
     });
+
+    unawaited(_badgeService?.evaluateAfterDeposit(familyId, childId, addedNewBalance));
+    unawaited(_badgeService?.evaluateStreak(familyId, childId));
   }
 
   @override
@@ -479,6 +497,8 @@ class FirebaseBucketRepository implements BucketRepository {
     final investmentTxnRef = txnsCollection.doc();
     final charityTxnRef = txnsCollection.doc();
 
+    double distributeMoneyNew = 0.0;
+
     await _firestore.runTransaction((tx) async {
       final moneySnap = await tx.get(moneyRef);
       final investmentSnap = await tx.get(investmentRef);
@@ -494,6 +514,7 @@ class FirebaseBucketRepository implements BucketRepository {
       // Money bucket
       if (moneyAmount > 0) {
         final moneyNew = moneyPrev + moneyAmount;
+        distributeMoneyNew = moneyNew;
         tx.update(moneyRef, {'balance': moneyNew, 'lastUpdatedAt': timestamp});
         tx.set(
           moneyTxnRef,
@@ -563,6 +584,11 @@ class FirebaseBucketRepository implements BucketRepository {
         );
       }
     });
+
+    if (distributeMoneyNew > 0) {
+      unawaited(_badgeService?.evaluateAfterDeposit(familyId, childId, distributeMoneyNew));
+      unawaited(_badgeService?.evaluateStreak(familyId, childId));
+    }
   }
 
   @override
@@ -618,6 +644,8 @@ class FirebaseBucketRepository implements BucketRepository {
       });
       tx.set(transactionRef, txn.toJson()..remove('id'));
     });
+
+    unawaited(_badgeService?.evaluateAfterDonation(familyId, childId));
 
     return donatedAmount;
   }

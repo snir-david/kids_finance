@@ -125,6 +125,15 @@ service cloud.firestore {
         allow read: if isParentOfFamily(familyId) || isChildOfFamily(familyId, childId);
         allow create, update, delete: if isParentOfFamily(familyId);
       }
+
+      // ── Achievement Badges ───────────────────────────────────────────────────
+      // Badges are awarded by the parent/app. Children can mark them as seen.
+
+      match /children/{childId}/badges/{badgeId} {
+        allow read: if isParentOfFamily(familyId) || isChildOfFamily(familyId, childId);
+        allow create: if isParentOfFamily(familyId);
+        allow update: if isParentOfFamily(familyId) || isChildOfFamily(familyId, childId);
+      }
     }
 
     // ── Deny everything else ──────────────────────────────────────────────────

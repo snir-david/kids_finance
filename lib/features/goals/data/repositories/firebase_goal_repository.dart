@@ -1,12 +1,18 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/goal_model.dart';
 import 'goal_repository.dart';
+import '../../../badges/data/services/badge_evaluation_service.dart';
 
 class FirebaseGoalRepository implements GoalRepository {
-  FirebaseGoalRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseGoalRepository({
+    FirebaseFirestore? firestore,
+    BadgeEvaluationService? badgeService,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _badgeService = badgeService;
 
   final FirebaseFirestore _firestore;
+  final BadgeEvaluationService? _badgeService;
 
   CollectionReference<Map<String, dynamic>> _goalsRef(
     String familyId,
@@ -64,6 +70,8 @@ class FirebaseGoalRepository implements GoalRepository {
     await _goalsRef(familyId, childId).doc(goalId).update({
       'completedAt': Timestamp.now(),
     });
+
+    unawaited(_badgeService?.evaluateAfterGoalCompleted(familyId, childId));
   }
 
   /// Checks if any active goal for a child is now met by [currentBalance].

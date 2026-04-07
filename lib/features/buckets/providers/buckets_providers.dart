@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
 import '../data/firebase_bucket_repository.dart';
+import '../../badges/data/services/badge_evaluation_service.dart';
 import '../../../core/offline/connectivity_provider.dart';
 import '../../../core/offline/sync_providers.dart';
 
@@ -11,6 +12,7 @@ final bucketRepositoryProvider = Provider<BucketRepository>((ref) {
   return FirebaseBucketRepository(
     connectivity: ref.watch(connectivityServiceProvider),
     queue: ref.watch(offlineQueueProvider),
+    badgeService: ref.watch(badgeEvaluationServiceProvider),
   );
 });
 
