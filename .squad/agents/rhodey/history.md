@@ -1,3 +1,29 @@
+## 2026-04-07: Sprint 7D — Achievement Badges UI
+
+**Status:** ✅ COMPLETE
+
+### Deliverables
+- **BadgeChip** — Circular chip widget; earned = full color + scale-bounce animate-in; locked = greyscale + 🔒 overlay. Tappable → `BadgeDetailSheet`.
+- **BadgeDetailSheet** — Bottom sheet showing emoji, name, description, earned date. Calls `markSeen` on open for unseen earned badges. Shows "Keep going to unlock!" for locked ones.
+- **BadgeShelf** — Horizontally scrolling row of all 6 badge types in correct earned/locked state. Section header "My Badges". Empty-state hint copy.
+- **Badge Unlock Celebration** — Full-screen `showGeneralDialog` overlay with animated emoji scale-up, `badgeUnlocked` title, name + description, "Awesome!" button. Auto-dismisses after 3 seconds. Calls `markSeen` on dismiss. Uses `_celebratedBadgeIds` Set to prevent re-triggering.
+- **BadgeShelf wired in child home** — Added below Goals section in `child_home_screen.dart`. Watches `badgesProvider` for celebration triggers.
+- **Unseen badge indicator on parent home** — Red "🏅 N" chip on each child card in `_buildChildSelector` when `unseenBadgeCountProvider > 0`.
+
+**Localization:** 22 new l10n keys — `myBadges`, `badgeUnlocked`, `keepGoingToUnlock`, `newBadges`, `completeActionsToUnlock`, `earnedOnDate(date)`, 6 badge names, 6 badge descriptions (EN + HE).
+
+**Quality:** 0 analyze issues. Built on JARVIS's data layer (commit `66f9f33`).
+
+### Key Files
+- Created: `lib/features/badges/presentation/widgets/badge_chip.dart`
+- Created: `lib/features/badges/presentation/widgets/badge_detail_sheet.dart`
+- Created: `lib/features/badges/presentation/widgets/badge_shelf.dart`
+- Modified: `lib/features/auth/presentation/child_home_screen.dart` (BadgeShelf + celebration)
+- Modified: `lib/features/auth/presentation/parent_home_screen.dart` (unseen indicator)
+- Modified: `lib/core/l10n/app_localizations.dart` (badge l10n keys)
+
+---
+
 ## 2026-04-07: Sprint 7B — Savings Goals UI
 
 **Status:** ✅ COMPLETE
