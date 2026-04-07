@@ -668,3 +668,24 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
 ### Result
 - lutter analyze lib/ → **0 issues**
 - Hardware back / swipe-back from child home now safely returns to parent home instead of crashing or looping.
+
+---
+
+## Phase 5 — Dark Theme + Hebrew Localization (2026-07-10)
+
+### Delivered
+- ✅ lib/core/theme/theme_provider.dart — ThemeModeNotifier (Riverpod v3 Notifier) persists ThemeMode to SharedPreferences
+- ✅ lib/core/theme/app_theme.dart — Added AppTheme.light and AppTheme.dark (Material 3) alongside existing kid/parent themes
+- ✅ lib/core/l10n/app_localizations.dart — Manual AppLocalizations class with English + Hebrew translations (no build_runner, no code gen); covers all UI strings
+- ✅ lib/core/l10n/locale_provider.dart — LocaleNotifier (Riverpod v3 Notifier) persists locale to SharedPreferences
+- ✅ lib/app.dart — Updated KidsFinanceApp to wire 	hemeMode, 	heme/darkTheme, locale, supportedLocales, and localizationsDelegates into MaterialApp.router
+- ✅ lib/features/settings/presentation/settings_screen.dart — Settings screen with language picker (en/he) and theme picker (system/light/dark)
+- ✅ lib/routing/app_router.dart — Added /settings route
+- ✅ lib/features/auth/presentation/parent_home_screen.dart — Added Icons.settings IconButton in AppBar → pushes /settings
+- ✅ pubspec.yaml — Added shared_preferences: ^2.3.5 and lutter_localizations: sdk: flutter
+
+### Architecture Notes
+- RTL layout is automatic via GlobalWidgetsLocalizations.delegate when Locale('he') is set
+- Both notifiers start with a default value synchronously and update state after async SharedPreferences load
+- AppLocalizations.of(context) follows the standard Flutter delegate pattern — no generated code
+- lutter analyze lib/ --no-preamble → 0 issues
