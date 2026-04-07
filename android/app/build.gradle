@@ -21,7 +21,10 @@ android {
 
     defaultConfig {
         applicationId = "com.kidsfinance.app"
-        minSdkVersion = flutter.minSdkVersion
+        // Firebase Auth requires minSdk >= 21. Set explicitly rather than
+        // deferring to flutter.minSdkVersion, which resolves to 16 on older
+        // Flutter installations.
+        minSdkVersion 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"

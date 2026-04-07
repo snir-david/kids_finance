@@ -13,35 +13,75 @@ import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
 
+/// A [ChangeNotifier] that tells GoRouter to re-evaluate its redirect whenever
+/// the Firebase auth state or the user's Firestore role changes.
+///
+/// Using [refreshListenable] keeps the [GoRouter] instance STABLE — it is
+/// created once and never recreated. Without this, wrapping [GoRouter] in a
+/// Riverpod [Provider] that calls [ref.watch] causes a new router instance
+/// to be returned on every state change, which resets the navigation stack
+/// to [initialLocation] and produces the classic "stuck on splash" bug.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(Ref ref) {
+    // Re-trigger GoRouter's redirect whenever auth or role state changes.
+    ref.listen<AsyncValue>(
+      firebaseAuthStateProvider,
+      (_, __) => notifyListeners(),
+    );
+    ref.listen<AsyncValue>(
+      appUserRoleProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(firebaseAuthStateProvider);
-  final userRoleAsync = ref.watch(appUserRoleProvider);
+  // Create the notifier and dispose it with the provider.
+  final notifier = _RouterRefreshNotifier(ref);
+  ref.onDispose(notifier.dispose);
 
   return GoRouter(
     initialLocation: '/splash',
+    // GoRouter calls redirect whenever notifier fires — the router itself is
+    // never recreated, only the redirect logic re-runs.
+    refreshListenable: notifier,
     redirect: (BuildContext context, GoRouterState state) {
-      final isLoggedIn = authState.value != null;
+      // Use ref.read (not ref.watch) — reading stable state, not subscribing.
+      final isLoggedIn = ref.read(firebaseAuthStateProvider).value != null;
+      final userRole =
+          ref.read(appUserRoleProvider).value ?? AppUserRole.unauthenticated;
       final currentLocation = state.matchedLocation;
-      final userRole = userRoleAsync.value ?? AppUserRole.unauthenticated;
 
-      // Not authenticated: redirect to login (but allow family-setup)
-      if (!isLoggedIn && currentLocation != '/login' && currentLocation != '/family-setup') {
+      // ── Unauthenticated ──────────────────────────────────────────────────
+      // Only /login and /family-setup are accessible without an account.
+      if (!isLoggedIn) {
+        if (currentLocation == '/login' ||
+            currentLocation == '/family-setup') {
+          return null; // Allow
+        }
         return '/login';
       }
 
-      // Authenticated but on login page: redirect based on role
-      if (isLoggedIn && currentLocation == '/login') {
-        if (userRole == AppUserRole.parent) {
-          return '/parent-home';
-        } else if (userRole == AppUserRole.child) {
-          // Child needs to pick which child they are first
-          return '/child-picker';
-        }
-        // Still loading role — stay on splash briefly
-        return '/splash';
+      // ── Authenticated ─────────────────────────────────────────────────────
+      // If the user is logged in and still on an auth-only screen (login,
+      // splash, or family-setup), redirect them based on their role.
+      // This covers:
+      //   • Normal login → straight to home
+      //   • Family creation → role becomes 'parent' → auto-redirect out of
+      //     /family-setup to /parent-home (no explicit context.go() needed)
+      //   • Cold start while already logged in → /splash redirects to home
+      if (currentLocation == '/login' ||
+          currentLocation == '/splash' ||
+          currentLocation == '/family-setup') {
+        if (userRole == AppUserRole.parent) return '/parent-home';
+        if (userRole == AppUserRole.child) return '/child-picker';
+        // Role not yet loaded (Firestore profile not written yet).
+        // Return null to stay on the current screen; when appUserRoleProvider
+        // emits the real role, notifier fires and this redirect runs again.
+        return null;
       }
 
-      // Allow navigation
+      // Allow all other navigation.
       return null;
     },
     routes: [

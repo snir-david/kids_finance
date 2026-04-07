@@ -37,11 +37,19 @@ class AuthService {
     return _auth.authStateChanges();
   }
 
-  Future<void> createFamily(String displayName) async {
+  /// Creates a new family document and the creator's user-profile document
+  /// as a single atomic Firestore batch write.
+  ///
+  /// [familyName] is the human-readable family name (e.g. "The Smith Family").
+  /// It is stored on the family document, not on the user profile.
+  Future<void> createFamily(String familyName) async {
     var user = getCurrentUser();
     if (user == null) {
-      // Wait for auth state to resolve after sign-up
-      user = await _auth.authStateChanges().first;
+      // Sign-up just completed; wait for the auth state stream to emit the
+      // authenticated user.  Using `.first` is unsafe here because the stream
+      // may immediately re-emit `null` (the previous unauthenticated state)
+      // before emitting the newly signed-in user.  `.firstWhere` skips nulls.
+      user = await _auth.authStateChanges().firstWhere((u) => u != null);
       if (user == null) {
         throw Exception('No authenticated user');
       }
@@ -49,10 +57,16 @@ class AuthService {
 
     final familyId = _firestore.collection('families').doc().id;
 
+    // Derive a display name for the user's profile from their Firebase account.
+    // For email/password sign-up, user.displayName is always null, so we fall
+    // back to the local part of the email address (e.g. "jane" from "jane@…").
+    final userDisplayName = user.displayName ??
+        (user.email?.split('@').firstOrNull ?? 'Parent');
+
     final batch = _firestore.batch();
 
     batch.set(_firestore.collection('families').doc(familyId), {
-      'name': displayName,
+      'name': familyName,
       'parentIds': [user.uid],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -61,7 +75,7 @@ class AuthService {
 
     batch.set(_firestore.collection('userProfiles').doc(user.uid), {
       'email': user.email,
-      'displayName': user.displayName ?? displayName,
+      'displayName': userDisplayName, // user's own name, NOT the family name
       'familyId': familyId,
       'role': 'parent',
       'createdAt': FieldValue.serverTimestamp(),
