@@ -152,6 +152,55 @@ class AppLocalizations {
           : 'Share this Family Code with another parent.';
   String get addToGetStarted => isHebrew ? 'הוסף את הילד הראשון כדי להתחיל' : 'Add your first child to get started';
 
+  // ─── Achievement Badges ───────────────────────────────────────────────────
+  String get myBadges => isHebrew ? 'הפרסים שלי' : 'My Badges';
+  String get badgeUnlocked => isHebrew ? 'פרס חדש!' : 'New Badge Unlocked!';
+  String get keepGoingToUnlock =>
+      isHebrew ? 'המשך כדי לפתוח!' : 'Keep going to unlock!';
+  String get newBadges => isHebrew ? 'פרסים חדשים' : 'new badges';
+  String get completeActionsToUnlock =>
+      isHebrew
+          ? 'בצע פעולות כדי לפתוח פרסים!'
+          : 'Complete actions to unlock badges!';
+
+  // Badge names
+  String get badgeNameFirstDeposit =>
+      isHebrew ? 'הפקדה ראשונה' : 'First Deposit';
+  String get badgeNameGenerousHeart => isHebrew ? 'לב נדיב' : 'Generous Heart';
+  String get badgeNameYoungInvestor =>
+      isHebrew ? 'משקיע צעיר' : 'Young Investor';
+  String get badgeNameGoalGetter => isHebrew ? 'מגשים יעדים' : 'Goal Getter';
+  String get badgeNameSaver => isHebrew ? 'חוסך' : 'Saver';
+  String get badgeNameStreak => isHebrew ? 'בלהבות!' : 'On Fire!';
+
+  // Badge descriptions
+  String get badgeDescFirstDeposit =>
+      isHebrew
+          ? 'ביצעת את ההפקדה הראשונה שלך!'
+          : 'You made your first deposit!';
+  String get badgeDescGenerousHeart =>
+      isHebrew
+          ? 'ביצעת את התרומה הראשונה שלך!'
+          : 'You made your first donation!';
+  String get badgeDescYoungInvestor =>
+      isHebrew ? 'ההשקעה שלך הוכפלה!' : 'Your investment was multiplied!';
+  String get badgeDescGoalGetter =>
+      isHebrew
+          ? 'הגעת ליעד החיסכון הראשון!'
+          : 'You reached your first savings goal!';
+  String get badgeDescSaver =>
+      isHebrew
+          ? 'יתרת הכסף שלך הגיעה ל-100₪!'
+          : 'Your Money bucket reached 100₪!';
+  String get badgeDescStreak =>
+      isHebrew
+          ? '4 שבועות רצופים של הפקדות!'
+          : '4 weeks of deposits in a row!';
+
+  // Parameterised badge helper
+  String earnedOnDate(String date) =>
+      isHebrew ? 'הושג ב $date' : 'Earned on $date';
+
   // ─── Savings Goals ────────────────────────────────────────────────────────
   String get savingsGoals => isHebrew ? 'יעדי חיסכון' : 'Savings Goals';
   String get addGoal => isHebrew ? 'הוסף יעד' : 'Add Goal';

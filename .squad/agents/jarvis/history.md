@@ -1,5 +1,57 @@
 # JARVIS Backend Dev - Work History
 
+## 2026-04-07: Sprint 7D — Achievement Badges Data Layer
+
+**Status:** ✅ COMPLETE
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `lib/features/badges/data/models/badge_model.dart` | `BadgeType` enum (6 types) + `Badge` plain Dart + Equatable model with `fromFirestore` / `toMap`, emoji/displayName getters |
+| `lib/features/badges/data/repositories/badge_repository.dart` | Abstract `BadgeRepository` interface (watchBadges, awardBadge, markSeen, hasBadge) |
+| `lib/features/badges/data/repositories/firebase_badge_repository.dart` | `FirebaseBadgeRepository` — streams ordered by earnedAt desc, idempotent awardBadge, hasBadge query |
+| `lib/features/badges/data/repositories/badge_repository_provider.dart` | Riverpod `Provider<BadgeRepository>` |
+| `lib/features/badges/presentation/providers/badges_provider.dart` | `badgesProvider` StreamProvider.family + `unseenBadgeCountProvider` derived provider |
+| `lib/features/badges/data/services/badge_evaluation_service.dart` | `BadgeEvaluationService` with 5 trigger methods + `badgeEvaluationServiceProvider`; streak uses ISO week number check over last 28 days |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `firestore.rules` | Added `badges` subcollection rule under `/children/{childId}/badges/{badgeId}` |
+| `lib/features/buckets/data/firebase_bucket_repository.dart` | Injected `BadgeEvaluationService?`; wired `unawaited` evaluation after `setMoneyBalance`, `addMoney`, `distributeFunds` (deposit + streak), `donateCharity`, `donateBucket` (donation), `multiplyInvestment` (investment) |
+| `lib/features/buckets/providers/buckets_providers.dart` | Injected `badgeEvaluationServiceProvider` into `bucketRepositoryProvider` |
+| `lib/features/goals/data/repositories/firebase_goal_repository.dart` | Injected `BadgeEvaluationService?`; wired `unawaited` evaluation after `markCompleted` |
+| `lib/features/goals/data/repositories/goal_repository_provider.dart` | Injected `badgeEvaluationServiceProvider` |
+| `lib/features/auth/presentation/child_home_screen.dart` | Fixed `hide Badge` for Flutter material conflict + Offset scale() fix (Rhodey's widget used old flutter_animate API) |
+| `lib/features/badges/presentation/widgets/badge_chip.dart` | Fixed `hide Badge` + Offset scale() fix |
+| `lib/features/badges/presentation/widgets/badge_detail_sheet.dart` | Fixed `hide Badge` |
+| `lib/features/badges/presentation/widgets/badge_shelf.dart` | Fixed `hide Badge` |
+
+### Evaluation Hooks Wired
+
+| Badge | Hook Location |
+|-------|---------------|
+| `firstDeposit` | After `addMoney`, `setMoneyBalance`, `distributeFunds` (when moneyAmount > 0) |
+| `saver` (balance ≥ 100₪) | Same as above — `evaluateAfterDeposit` checks balance |
+| `streak` (4 consecutive weeks) | After `addMoney`, `distributeFunds` — queries transactions for ISO week coverage |
+| `generousHeart` | After `donateCharity` + `donateBucket` |
+| `youngInvestor` | After `multiplyInvestment` |
+| `goalGetter` | After `FirebaseGoalRepository.markCompleted` |
+
+### Firestore Path
+`/families/{familyId}/children/{childId}/badges/{badgeId}`
+
+### Design Decisions
+- `Badge` class name conflicts with Flutter's `Badge` widget — fixed with `hide Badge` in material.dart imports
+- Badge evaluation is fire-and-forget (`unawaited`) — never blocks the primary write
+- `awardBadge` is idempotent: calls `hasBadge` first, skips if already earned (one-time-only)
+- Streak algorithm: queries transactions with type in [moneyAdded, distributed, moneySet] over last 28 days; checks all 4 most-recent ISO week numbers are covered
+
+### Code Quality
+`flutter analyze lib/` → **0 issues** ✅
+
 ## 2026-04-07: Sprint 7B — Savings Goals Data Layer
 
 **Status:** ✅ COMPLETE

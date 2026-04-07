@@ -1,13 +1,16 @@
-feat: Sprint 5B — offline sync, conflict resolution, TTL queue
+feat: Sprint 7B — Savings Goals (data layer, UI, tests)
 
-- Hive-based offline queue with 24h TTL (warn at 23h, purge at 24h)
-- ConnectivityService + Riverpod providers for online/offline state
-- SyncEngine: auto-sync on reconnect, conflict detection for bucket balances
-- Conflict resolution: user prompt (useLocal vs useServer)
-- Non-balance writes: last-write-wins (updateChild, archiveChild)
-- OfflineStatusBanner: 4-state animated banner on all screens
-- ConflictResolutionDialog: forced user choice, one conflict at a time
-- TTL expiry warning via app lifecycle observer
-- 29 new tests (200 total)
+Team deliverables:
+- JARVIS: Goal model, Firebase repository, Riverpod providers, Firestore rules (0 analyze issues)
+- Rhodey: GoalCard, AddGoalDialog, home screen integration, 8 l10n keys (0 analyze issues)  
+- Happy: 39 passing tests (goal model, repository, completion, widget) (100% pass rate)
+
+Feature highlights:
+- Goal model with progressPercent and isCompleted computed properties
+- Firestore-backed repository with soft-delete pattern and reactive streams
+- Goal creation dialog and card components with Material 3 styling
+- Child and parent home screen integration
+- Confetti celebration on goal completion
+- Full test coverage (model, repository, edge cases, UI)
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

@@ -7,6 +7,7 @@ import '../../../core/offline/sync_providers.dart';
 import '../../../core/offline/widgets/conflict_resolution_dialog.dart';
 import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../badges/presentation/providers/badges_provider.dart';
 import '../../buckets/domain/bucket.dart';
 import '../../buckets/presentation/widgets/bucket_action_sheets.dart';
 import '../../buckets/presentation/widgets/celebration_overlay.dart';
@@ -327,6 +328,14 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           final child = children[index];
           final isSelected = child.id == selectedChildId;
 
+          // Watch unseen badge count for this child.
+          final unseenCount = ref.watch(
+            unseenBadgeCountProvider((
+              familyId: familyId,
+              childId: child.id,
+            )),
+          );
+
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
@@ -369,6 +378,26 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    // Unseen badge indicator
+                    if (unseenCount > 0) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '🏅 $unseenCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
