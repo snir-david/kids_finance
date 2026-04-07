@@ -1,0 +1,8 @@
+feat: Sprint 5A wave 2 — distribute funds UI, edit child dialog, archive child flow
+
+- _DistributeFundsDialog: split total amount across 3 buckets with real-time remainder
+- _EditChildDialog: edit name, avatar, PIN reset
+- Archive child: soft delete with confirmation dialog
+- All wired to JARVIS's distributeFunds/updateChild/archiveChild repository methods
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
