@@ -165,3 +165,25 @@
 - **Sprint Plan:** 20 work items across 4 sprints (5A–5D), targeting 50+ tests
 - **Output:** `.squad/decisions/inbox/stark-next-phase-plan.md`
 
+### 2026-04-08: Sprint 5D — Production Readiness Audit
+- **Status:** ✅ BETA READY WITH CAVEATS
+- **Audit Scope:** 8 areas covering error handling, loading states, navigation, data consistency, code quality, firebase config, app metadata, documentation
+- **Key Findings:**
+  - **lib/ codebase:** 57 Dart files, 0 lint issues (flutter analyze clean)
+  - **Error handling:** Comprehensive try/catch with user-friendly SnackBar messages
+  - **Loading states:** Buttons disabled during async ops, CircularProgressIndicator throughout
+  - **PIN hardgate:** PopScope + automaticallyImplyLeading=false prevents bypass
+  - **Offline sync:** Hive persists queue to disk, survives force-close
+  - **Archived children:** Filter applied in childrenProvider, no stale data
+  - **firebase_options.dart:** Contains real credentials (client API key — low risk, but noted)
+  - **App metadata:** AndroidManifest correctly shows "KidsFinance", default icon remains
+- **Files Updated:**
+  - `README.md` — Added "Current Status (Sprint 5 Complete)" section
+  - `QUICKSTART.md` — Updated feature list, removed obsolete code-gen references
+  - `SETUP.md` — Updated development notes to reflect Sprint 5
+- **Deliverable:** `.squad/decisions/inbox/stark-sprint5d-readiness.md`
+- **Verdict:** READY WITH CAVEATS
+  - Core functionality complete and tested
+  - Requires real Firebase config for deployment
+  - Documentation updated to current state
+  - Custom app icon recommended before public beta

@@ -94,22 +94,13 @@ For detailed architecture information, see:
 
 ## Development Notes
 
-### Phase 1 (Current): Core Infrastructure ✅
-- Firebase integration
-- Routing setup
-- Authentication scaffolding
-- Dual theme system (Parent/Child)
+### Sprint 5 (Complete) ✅
+- **5A:** Allowance distribution, celebration animations, kids screen, edit child, soft-delete, forgot password
+- **5B:** Offline sync (Hive queue 24h TTL, SyncEngine, ConflictResolution dialog, OfflineStatusBanner)
+- **5C:** JWT spoofing fix, PIN brute-force lockout (5→15min), 24h session expiry, Cloud Function hardening, Firestore rules tightening
 
-### Phase 2 (Next): Authentication Implementation
-- Google Sign-In flow
-- Family setup
-- Child PIN creation & verification
-- Parent session management
-
-### Phase 3: Bucket System
-- Three-bucket UI (Money, Investments, Charity)
-- Transaction creation & tracking
-- Firestore data layer integration
+### Previous Phases (Complete) ✅
+- Phase 1-4: Core infrastructure, authentication, family management, bucket system, multi-parent support
 
 ## Troubleshooting
 

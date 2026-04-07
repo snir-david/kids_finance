@@ -54,6 +54,34 @@ Rewrote `lib/routing/app_router.dart` to use standard Provider instead of @river
 
 **Result:** The data layer is now fully compatible with Flutter 3.41.6 without any code generation dependencies.
 
+## Sprint 5D — 2026-04-08: Firebase Emulator Setup + Integration Test Infrastructure
+
+**Status:** ✅ COMPLETE
+
+### Files Created
+- `integration_test/test_helpers/firebase_test_setup.dart` — `setupFirebaseEmulator()` pointing Firestore/Auth/Functions to local emulator ports
+- `integration_test/test_helpers/test_data.dart` — seed helpers: `createTestFamily`, `createTestParent`, `createTestChild`, `createTestBuckets`, `cleanupTestData`
+- `lib/firebase_options.dart.example` — safe-to-commit template for `flutterfire configure` output
+- `scripts/seed_emulator.ps1` — Windows: starts emulator, prints test credentials
+- `scripts/seed_emulator.sh` — Linux/macOS: same as above
+
+### Files Modified
+- `firebase.json` — added `emulators` block: Firestore (8080), Auth (9099), Functions (5001), UI (4000), singleProjectMode
+
+### Verified
+- `integration_test` package was already in `pubspec.yaml` dev_dependencies
+- `.firebaserc` already existed (project: kids-finance-80957)
+- `lib/firebase_options.dart` already in `.gitignore`
+- `flutter analyze lib/` → **0 issues** ✅
+
+### Emulator Ports
+| Service   | Port |
+|-----------|------|
+| Firestore | 8080 |
+| Auth      | 9099 |
+| Functions | 5001 |
+| UI        | 4000 |
+
 ## Learnings
 
 ### 2024-04-06: Firestore Timestamp Deserialization Bug (critical)

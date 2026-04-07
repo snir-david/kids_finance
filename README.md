@@ -2,6 +2,23 @@
 
 Android app (Flutter + Firebase) for kids' financial literacy.
 
+## Current Status (Sprint 5 Complete)
+
+### What's Working
+- ✅ **Authentication:** Email/password login, Google Sign-In, forgot password
+- ✅ **Family Management:** Create family, join via invite code, multi-parent support
+- ✅ **Child Management:** Add/edit/archive children with emoji avatars
+- ✅ **Three-Bucket System:** Money, Investment, Charity with full CRUD
+- ✅ **Allowance Distribution:** Split funds across buckets with celebration animations
+- ✅ **PIN Authentication:** 4-6 digit PIN with brute-force lockout (5 tries → 15min)
+- ✅ **Offline Sync:** Hive queue with 24h TTL, conflict resolution dialog
+- ✅ **Security:** JWT spoofing fix, 24h session expiry, Firestore rules hardening
+
+### What Requires Configuration
+- Firebase project with Authentication and Firestore enabled
+- `google-services.json` in `android/app/`
+- Run `flutterfire configure` to generate `lib/firebase_options.dart`
+
 ## Overview
 
 Three buckets per child:
@@ -16,6 +33,8 @@ Three buckets per child:
 - Parents control all bucket values
 - Children have read-only access via PIN authentication
 - Investment multiplier system (parent-controlled)
+- Offline-first with automatic sync when connectivity returns
+- Celebration animations for investments and donations
 
 ## Tech Stack
 
@@ -23,9 +42,9 @@ Three buckets per child:
 - **Firebase Auth** - Parent authentication
 - **Cloud Firestore** - Real-time database
 - **Cloud Functions** - Backend business logic
-- **Riverpod** - State management with code generation
+- **Riverpod** - State management
 - **GoRouter** - Declarative routing
-- **Freezed** - Immutable data models
+- **Hive** - Local offline queue storage
 
 ## Project Structure
 
@@ -67,7 +86,12 @@ lib/
    flutterfire configure
    ```
 4. Replace `android/app/google-services.json` with your Firebase config
-5. Run `flutter pub run build_runner build` to generate code
+5. Run the app:
+   ```bash
+   flutter run
+   ```
+
+See `lib/firebase_options.dart.example` for the expected configuration structure.
 
 ### Run
 
@@ -77,22 +101,7 @@ flutter run
 
 ## Development
 
-### Code Generation
-
-This project uses code generation for:
-- Riverpod providers (`@riverpod`)
-- Freezed models (`@freezed`)
-- JSON serialization
-
-Run code generation:
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
-```
-
-Watch mode (auto-regenerate on file changes):
-```bash
-flutter pub run build_runner watch --delete-conflicting-outputs
-```
+No code generation is required — the project uses standard Riverpod providers and Equatable models.
 
 ### Architecture
 
