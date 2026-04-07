@@ -75,6 +75,7 @@ class AppLocalizations {
 
   // ─── Error messages ────────────────────────────────────────────────────────
   String get errorLoading => isHebrew ? 'שגיאה בטעינה' : 'Error loading';
+  String get errorLoadingHistory => isHebrew ? 'שגיאה בטעינת ההיסטוריה' : 'Error loading history';
   String get somethingWentWrong => isHebrew ? 'משהו השתבש' : 'Something went wrong';
   String get errorLoadingChildren => isHebrew ? 'שגיאה בטעינת ילדים' : 'Error loading children';
   String get noFamilyFound => isHebrew ? 'לא נמצאה משפחה' : 'No family found';
@@ -83,6 +84,8 @@ class AppLocalizations {
   // ─── Empty states ──────────────────────────────────────────────────────────
   String get noChildrenYet => isHebrew ? 'אין ילדים עדיין' : 'No children yet';
   String get noTransactions => isHebrew ? 'אין עסקאות' : 'No transactions';
+  String get noTransactionsYet => isHebrew ? 'אין עסקאות עדיין' : 'No transactions yet';
+  String get actionsWillAppearHere => isHebrew ? 'פעולות יופיעו כאן' : 'Actions will appear here';
   String get addFirstChild => isHebrew ? 'הוסף את הילד הראשון' : 'Add your first child';
 
   // ─── Dialogs ───────────────────────────────────────────────────────────────
@@ -149,8 +152,21 @@ class AppLocalizations {
           : 'Share this Family Code with another parent.';
   String get addToGetStarted => isHebrew ? 'הוסף את הילד הראשון כדי להתחיל' : 'Add your first child to get started';
 
+  // ─── Transaction type labels ───────────────────────────────────────────────
+  String get moneySet => isHebrew ? 'הגדרת כסף' : 'Money set';
+  String get moneyAdded => isHebrew ? 'כסף נוסף' : 'Money added';
+  String get moneyRemoved => isHebrew ? 'כסף הוסר' : 'Money removed';
+  String get donatedToCharity => isHebrew ? 'תרומה לצדקה' : 'Donated to charity';
+  String get allowanceDistributed => isHebrew ? 'דמי כיס חולקו' : 'Allowance distributed';
+  String get bucketTransfer => isHebrew ? 'העברה בין קופסאות' : 'Bucket transfer';
+  String get purchase => isHebrew ? 'קנייה' : 'Purchase';
+
   // ─── Parameterised helpers ─────────────────────────────────────────────────
   String hiName(String name) => isHebrew ? 'שלום $name! 👋' : 'Hi $name! 👋';
+  String childHistory(String name) =>
+      isHebrew ? 'היסטוריה של $name' : "$name's History";
+  String investmentMultiplied(String mult) =>
+      isHebrew ? 'השקעה הוכפלה $mult' : 'Investment multiplied $mult';
   String addedToBuckets(String name) =>
       isHebrew ? '✅ נוסף לקופסאות של $name!' : "✅ Added to $name's buckets!";
   String addFundsFor(String name) =>

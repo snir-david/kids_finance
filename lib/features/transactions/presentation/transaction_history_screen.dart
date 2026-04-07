@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
 import '../domain/transaction.dart' as app_transaction;
@@ -20,6 +21,7 @@ class TransactionHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final transactionsAsync = ref.watch(transactionHistoryProvider((
       childId: childId,
       familyId: familyId,
@@ -27,26 +29,26 @@ class TransactionHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("$childName's History"),
+        title: Text(l10n.childHistory(childName)),
         centerTitle: true,
       ),
       body: transactionsAsync.when(
         data: (transactions) {
           if (transactions.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('📋', style: TextStyle(fontSize: 64)),
-                  SizedBox(height: 16),
+                  const Text('📋', style: TextStyle(fontSize: 64)),
+                  const SizedBox(height: 16),
                   Text(
-                    'No transactions yet',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    l10n.noTransactionsYet,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Actions will appear here',
-                    style: TextStyle(color: Colors.grey),
+                    l10n.actionsWillAppearHere,
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
@@ -61,7 +63,7 @@ class TransactionHistoryScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${AppLocalizations.of(context).errorLoadingHistory}: $e')),
       ),
     );
   }
@@ -73,7 +75,8 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final info = _transactionInfo(transaction);
+    final l10n = AppLocalizations.of(context);
+    final info = _transactionInfo(transaction, l10n);
     final dateStr = DateFormat('MMM d, yyyy • h:mm a').format(transaction.performedAt);
     final balanceChange = transaction.newBalance - transaction.previousBalance;
     final isPositive = balanceChange >= 0;
@@ -160,61 +163,61 @@ class _TransactionTile extends StatelessWidget {
     );
   }
 
-  _TxInfo _transactionInfo(app_transaction.Transaction t) {
+  _TxInfo _transactionInfo(app_transaction.Transaction t, AppLocalizations l10n) {
     switch (t.type) {
       case app_transaction.TransactionType.moneySet:
         return _TxInfo(
           emoji: '💰',
-          label: 'Money set',
+          label: l10n.moneySet,
           color: AppTheme.moneyColor,
         );
       case app_transaction.TransactionType.moneyAdded:
         return _TxInfo(
           emoji: '➕',
-          label: 'Money added',
+          label: l10n.moneyAdded,
           color: AppTheme.moneyColor,
         );
       case app_transaction.TransactionType.moneyRemoved:
         return _TxInfo(
           emoji: '➖',
-          label: 'Money removed',
+          label: l10n.moneyRemoved,
           color: Colors.orange,
         );
       case app_transaction.TransactionType.investmentMultiplied:
         final mult = t.multiplier != null ? '×${t.multiplier!.toStringAsFixed(1)}' : '';
         return _TxInfo(
           emoji: '📈',
-          label: 'Investment multiplied $mult',
+          label: l10n.investmentMultiplied(mult),
           color: AppTheme.investmentsColor,
         );
       case app_transaction.TransactionType.charityDonated:
         return _TxInfo(
           emoji: '❤️',
-          label: 'Donated to charity',
+          label: l10n.donatedToCharity,
           color: AppTheme.charityColor,
         );
       case app_transaction.TransactionType.distributed:
         return _TxInfo(
           emoji: '🎁',
-          label: 'Allowance distributed',
+          label: l10n.allowanceDistributed,
           color: AppTheme.moneyColor,
         );
       case app_transaction.TransactionType.donate:
         return _TxInfo(
           emoji: '❤️',
-          label: 'Donated to charity',
+          label: l10n.donatedToCharity,
           color: AppTheme.charityColor,
         );
       case app_transaction.TransactionType.transfer:
         return _TxInfo(
           emoji: '🔄',
-          label: 'Bucket transfer',
+          label: l10n.bucketTransfer,
           color: AppTheme.investmentsColor,
         );
       case app_transaction.TransactionType.spend:
         return _TxInfo(
           emoji: '🛍️',
-          label: 'Purchase',
+          label: l10n.purchase,
           color: Colors.orange,
         );
     }
