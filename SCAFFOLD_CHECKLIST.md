@@ -1,132 +1,141 @@
-# KidsFinance Phase 1 Scaffold — Completion Checklist
+# KidsFinance — Implementation Checklist
 
-**Date:** 2025-07-18  
-**Completed by:** Stark (Tech Lead)
-
-## ✅ Core Files Created
-
-- [x] `pubspec.yaml` - All dependencies with correct versions
-- [x] `README.md` - Project documentation
-- [x] `lib/main.dart` - Bootstrap with Firebase initialization
-- [x] `lib/app.dart` - MaterialApp.router setup
-- [x] `lib/firebase_options.dart` - Placeholder for FlutterFire CLI
-
-## ✅ Routing Layer
-
-- [x] `lib/routing/app_router.dart` - GoRouter with auth redirect
-  - /splash → loading screen
-  - /login → authentication
-  - /parent-home → parent dashboard
-  - /child-home → child view
-  - /child-pin → PIN entry
+**Last Updated:** 2026-04-08  
+**Status:** Sprint 5D Complete — Beta Ready
 
 ## ✅ Core Infrastructure
 
-- [x] `lib/core/theme/app_theme.dart` - Dual themes (kid/parent)
-- [x] `lib/core/constants/app_constants.dart` - App constants
-- [x] Placeholder READMEs in core/{constants,errors,extensions,utils,widgets}
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `pubspec.yaml` | ✅ Done | All dependencies |
+| `lib/main.dart` | ✅ Done | Firebase + Hive init |
+| `lib/app.dart` | ✅ Done | MaterialApp.router |
+| `lib/firebase_options.dart` | ⚠️ Placeholder | Replace for production |
+| GoRouter (`app_router.dart`) | ✅ Done | All routes |
+| Dual themes (`app_theme.dart`) | ✅ Done | Kid + Parent modes |
+| Constants (`app_constants.dart`) | ✅ Done | PIN, session, bucket constants |
 
-## ✅ Feature: Auth
+## ✅ Authentication
 
-- [x] `lib/features/auth/domain/app_user.dart` - User model with Freezed
-- [x] `lib/features/auth/providers/auth_providers.dart` - Auth state providers
-- [x] `lib/features/auth/presentation/login_screen.dart` - Login placeholder
-- [x] `lib/features/auth/presentation/parent_home_screen.dart` - Parent view
-- [x] `lib/features/auth/presentation/child_home_screen.dart` - Child view
-- [x] `lib/features/auth/presentation/child_pin_screen.dart` - PIN screen
-- [x] Placeholder READMEs in auth/{data,domain,presentation,providers}
+| Feature | Status | Files |
+|---------|--------|-------|
+| Parent registration | ✅ Done | `auth_service.dart`, `login_screen.dart` |
+| Parent login | ✅ Done | `auth_service.dart`, `login_screen.dart` |
+| Forgot password | ✅ Done | `forgot_password_screen.dart` |
+| Child PIN auth | ✅ Done | `pin_service.dart`, `child_pin_screen.dart` |
+| PIN brute-force lockout | ✅ Done | `pin_attempt_tracker.dart` |
+| 24h session expiry | ✅ Done | `session_provider.dart`, `pin_service.dart` |
+| Auth providers | ✅ Done | `auth_providers.dart` |
 
-## ✅ Feature: Family
+## ✅ Family Management
 
-- [x] Placeholder READMEs in family/{data,domain,presentation,providers}
+| Feature | Status | Files |
+|---------|--------|-------|
+| Family model | ✅ Done | `family.dart` |
+| Family repository | ✅ Done | `firebase_family_repository.dart` |
+| Family creation | ✅ Done | `family_setup_screen.dart` |
+| Multi-parent (invite code) | ✅ Done | familyId = invite code |
+| Family providers | ✅ Done | `family_providers.dart` |
 
-## ✅ Feature: Children
+## ✅ Children Management
 
-- [x] Placeholder READMEs in children/{data,domain,presentation,providers}
+| Feature | Status | Files |
+|---------|--------|-------|
+| Child model (with archived) | ✅ Done | `child.dart` |
+| Child repository | ✅ Done | `firebase_child_repository.dart` |
+| Add child | ✅ Done | `parent_home_screen.dart` |
+| Edit child | ✅ Done | `parent_home_screen.dart` |
+| Archive child (soft-delete) | ✅ Done | `child_repository.dart` |
+| Child picker | ✅ Done | `child_picker_screen.dart` |
+| Children providers | ✅ Done | `children_providers.dart` |
 
-## ✅ Feature: Buckets
+## ✅ Bucket System
 
-- [x] Placeholder READMEs in buckets/{data,domain,presentation,providers}
+| Feature | Status | Files |
+|---------|--------|-------|
+| Bucket model (3 types) | ✅ Done | `bucket.dart` |
+| Bucket repository | ✅ Done | `firebase_bucket_repository.dart` |
+| Money bucket operations | ✅ Done | add, remove, set |
+| Investment multiply | ✅ Done | `multiplyInvestment()` |
+| Charity donate | ✅ Done | `donateCharity()` |
+| Distribute to 3 buckets | ✅ Done | `distributeFunds()` |
+| Bucket providers | ✅ Done | `buckets_providers.dart` |
+| Celebration overlay | ✅ Done | `celebration_overlay.dart` |
 
-## ✅ Feature: Transactions
+## ✅ Transactions
 
-- [x] Placeholder READMEs in transactions/{data,domain,presentation,providers}
+| Feature | Status | Files |
+|---------|--------|-------|
+| Transaction model | ✅ Done | `transaction.dart` |
+| Transaction repository | ✅ Done | `firebase_transaction_repository.dart` |
+| Transaction history screen | ✅ Done | `transaction_history_screen.dart` |
+| Transaction providers | ✅ Done | `transaction_providers.dart` |
+| `distributed` type | ✅ Done | `TransactionType.distributed` |
 
-## ✅ Android Configuration
+## ✅ Offline Support
 
-- [x] `android/build.gradle` - Root Gradle config
-- [x] `android/settings.gradle` - Flutter plugin loader
-- [x] `android/local.properties` - SDK paths
-- [x] `android/app/build.gradle` - minSdk=21, targetSdk=34
-- [x] `android/app/google-services.json` - Placeholder with instructions
-- [x] `android/app/src/main/AndroidManifest.xml` - App manifest
-- [x] `android/app/src/main/kotlin/com/kidsfinance/app/MainActivity.kt`
+| Feature | Status | Files |
+|---------|--------|-------|
+| Pending operation model | ✅ Done | `pending_operation.dart` |
+| Hive-based queue | ✅ Done | `offline_queue.dart` |
+| Hive setup | ✅ Done | `hive_setup.dart` |
+| Connectivity service | ✅ Done | `connectivity_service.dart` |
+| Connectivity provider | ✅ Done | `connectivity_provider.dart` |
+| Sync engine | ✅ Done | `sync_engine.dart` |
+| Sync providers | ✅ Done | `sync_providers.dart` |
+| Conflict model | ✅ Done | `conflict.dart` |
+| Conflict resolution dialog | ✅ Done | `conflict_resolution_dialog.dart` |
+| Offline status banner | ✅ Done | `offline_status_banner.dart` |
+| 24h TTL + auto-purge | ✅ Done | `offline_queue.dart` |
 
-## ✅ Firebase Configuration
+## ✅ Security
 
-- [x] `firebase.json` - Firebase services config
-- [x] `.firebaserc` - Firebase project ID
+| Feature | Status | Files |
+|---------|--------|-------|
+| Firestore rules | ✅ Done | `firestore.rules` |
+| Family isolation | ✅ Done | `isParentOfFamily()` |
+| Delete prohibition | ✅ Done | `allow delete: if false` |
+| Non-negative balance | ✅ Done | `validBucketUpdate()` |
+| JWT spoofing fix | ✅ Done | `assertFamilyMembership()` |
+| Cloud Functions | ✅ Done | `functions/src/index.ts` |
+| PopScope PIN bypass fix | ✅ Done | `child_pin_screen.dart` |
 
-## ✅ Test Infrastructure
+## ✅ Shared Widgets
 
-- [x] `test/unit/README.md` - Unit test directory
-- [x] `test/widget/README.md` - Widget test directory
-- [x] `test/integration/README.md` - Integration test directory
+| Widget | Status | File |
+|--------|--------|------|
+| BucketCard | ✅ Done | `bucket_card.dart` |
+| ChildAvatar | ✅ Done | `child_avatar.dart` |
+| PinInputWidget | ✅ Done | `pin_input_widget.dart` |
+| AmountInputDialog | ✅ Done | `amount_input_dialog.dart` |
+| LoadingOverlay | ✅ Done | `loading_overlay.dart` |
+| ErrorDisplay | ✅ Done | `error_display.dart` |
 
-## ✅ Documentation
+## ❌ Not Implemented (Out of Scope)
 
-- [x] `.gitignore` - Excludes generated files
-- [x] `.squad/agents/stark/history.md` - Updated with learnings
-- [x] `.squad/decisions/inbox/stark-scaffold.md` - Decision log
+| Feature | Status | Reason |
+|---------|--------|--------|
+| Google Sign-In | ❌ Out of scope | Email/password sufficient for MVP |
+| iOS support | ❌ Out of scope | Android-first |
+| Web support | ❌ Out of scope | Mobile-first |
+| Biometric auth | ❌ Out of scope | PIN sufficient for children |
+| Recurring allowances | ❌ Out of scope | Manual distribution for MVP |
+| Push notifications | ❌ Out of scope | Future enhancement |
+| Hard delete child | ❌ By design | Soft-delete only for data safety |
 
 ## 📊 Statistics
 
-- **Total Dart files:** 12 implementation files + 25 placeholder READMEs = 37
-- **Total Android files:** 7
-- **Total root config files:** 5
-- **Features scaffolded:** 5 (auth, family, children, buckets, transactions)
-- **Routes defined:** 5 (splash, login, parent-home, child-home, child-pin)
+- **Total Dart files:** 57
+- **Flutter analyze issues:** 0
+- **Cloud Functions:** 4
+- **Firestore rules lines:** 118
+- **Screens:** 8
+- **Providers:** 20+
+- **Shared widgets:** 8
 
-## 🔄 Next Steps for Team
+---
 
-### JARVIS (Backend)
-1. Implement repositories in `features/*/data/`
-2. Create domain models in `features/*/domain/`
-3. Set up Cloud Functions for business logic
-
-### Fury (Security)
-1. Implement AuthRepository in `features/auth/data/`
-2. Build PIN verification system
-3. Write Firestore security rules
-
-### Rhodey (Mobile)
-1. Implement screens in `features/*/presentation/`
-2. Build reusable widgets in `lib/core/widgets/`
-3. Wire up providers to UI
-
-### Pepper (Design)
-1. Refine theme with brand colors
-2. Add animations with flutter_animate
-3. Create kid-friendly icons/illustrations
-
-### Happy (QA)
-1. Write unit tests for models
-2. Write widget tests for screens
-3. Set up Firebase emulator for integration tests
-
-## 🚀 Running the Project
-
-Before first run:
-```bash
-flutter pub get
-flutterfire configure
-flutter pub run build_runner build --delete-conflicting-outputs
-flutter run
-```
-
-## ✅ Sign-off
-
-**Phase 1 Scaffold:** COMPLETE  
-**Ready for team implementation:** YES  
-**Follows architecture spec:** YES  
-**Tech Lead:** Stark
+**Phase 1 Scaffold:** ✅ COMPLETE (2025-07-18)  
+**Phase 2-4 Implementation:** ✅ COMPLETE (2026-04-06)  
+**Sprint 5 (5A-5D):** ✅ COMPLETE (2026-04-08)  
+**Ready for Production Beta:** ✅ YES (with Firebase config)

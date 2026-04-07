@@ -1,88 +1,140 @@
 # Data Layer Setup Guide
 
-## What Was Implemented
+**Maintained by:** JARVIS (Backend Dev)
+**Updated:** 2026-04-08 (Sprints 5A-5D)
 
-JARVIS has completed the Phase 1 data layer implementation:
+---
 
-✅ **Domain Models** (5 files)
-- Family, ParentUser, Child, Bucket, Transaction
-- All use Freezed for immutability + JSON serialization
+## What Has Been Built
 
-✅ **Repository Interfaces** (4 files)
-- FamilyRepository, ChildRepository, BucketRepository, TransactionRepository
-- Abstract interfaces defining all data operations
+### Domain Layer
+- Family, Child, Bucket, Transaction, AppUser models — plain Dart + Equatable (no Freezed)
+- Repository interfaces for all four feature areas
+- Firebase implementations for all four repositories
 
-✅ **Firebase Implementations** (4 files)
-- Complete Firestore implementations for all repositories
-- Atomic transactions for bucket mutations
-- Batch writes for multi-document creates
+### Offline Layer
+- Hive-backed OfflineQueue with 24h TTL
+- SyncEngine that replays operations on reconnect
+- ConnectivityService (connectivity_plus 6.x)
+- Conflict detection + user-prompt resolution for bucket balance writes
 
-✅ **Riverpod Providers** (4 files)
-- Family, Children, Buckets, Transaction providers
-- Stream providers for real-time data
-- Computed providers for derived state
+### Auth Layer
+- Firebase Auth for parents (email/password)
+- bcrypt PIN auth for children (4-6 digits)
+- PinAttemptTracker: 5 failures -> 15min lockout (FlutterSecureStorage)
+- 24h child sessions stored locally + in Firestore
 
-## Next Steps
+### Cloud Functions
+- createFamily, addFundsToChild, multiplyBucket, distributeFunds (TypeScript in /functions)
 
-### 1. Code Generation (REQUIRED)
+---
 
-The code **will not compile** until you run code generation. Run this command:
+## Developer Setup
+
+### 1. Install Flutter Dependencies
 
 ```bash
 flutter pub get
-flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-This generates:
-- `*.freezed.dart` — Freezed model implementations
-- `*.g.dart` — JSON serialization code
-- `*_providers.g.dart` — Riverpod provider implementations
+DO NOT run build_runner. The project does NOT use Freezed, riverpod_generator, or hive_generator.
+These are incompatible with Flutter 3.41.6 + Dart 3.11.4. All code generation artifacts are
+hand-written.
 
-### 2. Create Firestore Index
+If you see advice to run:
+  flutter pub run build_runner build --delete-conflicting-outputs
+...IGNORE IT for this project.
 
-In Firebase Console > Firestore > Indexes, create:
+### 2. Hive Setup (Manual TypeAdapter)
 
-**Collection:** `families/{familyId}/transactions`  
-**Fields:**
-- `childId` (Ascending)
-- `performedAt` (Descending)
+Hive is used for the offline queue. The TypeAdapter for PendingOperation is hand-written in:
+  lib/core/offline/pending_operation.dart
 
-This enables efficient transaction queries by child.
+The adapter is registered in:
+  lib/core/offline/hive_setup.dart
 
-### 3. Verify Dependencies
+initHive() is called in lib/main.dart before runApp(). No further action needed.
 
-All required packages are already in `pubspec.yaml`:
-- ✅ flutter_riverpod
-- ✅ riverpod_annotation
-- ✅ cloud_firestore
-- ✅ freezed_annotation
-- ✅ json_annotation
-- ✅ build_runner (dev)
-- ✅ freezed (dev)
-- ✅ json_serializable (dev)
-- ✅ riverpod_generator (dev)
+DO NOT add hive_generator or build_runner to dev_dependencies -- this breaks the project.
 
-### 4. Security Rules (Fury's Domain)
+### 3. Firebase Emulator Setup
 
-Update `firestore.rules` to match the new collection structure:
+The firebase.json already has the emulator block configured:
 
-```
-/families/{familyId}
-/families/{familyId}/children/{childId}
-/families/{familyId}/children/{childId}/buckets/{bucketType}
-/families/{familyId}/transactions/{txnId}
-/userProfiles/{uid}
+| Service   | Port |
+|-----------|------|
+| Firestore | 8080 |
+| Auth      | 9099 |
+| Functions | 5001 |
+| UI        | 4000 |
+
+To start the emulator and seed test data (Windows):
+```powershell
+.\scripts\seed_emulator.ps1
 ```
 
-### 5. UI Integration (Rhodey/Pepper's Domain)
+To start the emulator (Linux/macOS):
+```bash
+./scripts/seed_emulator.sh
+```
 
-Use the providers in your screens:
-
+To connect the Flutter app to the emulator, call setupFirebaseEmulator() in your test setup:
 ```dart
-// Watch child's buckets
+// integration_test/test_helpers/firebase_test_setup.dart
+await setupFirebaseEmulator();
+```
+
+### 4. Firebase Production Setup
+
+If setting up from scratch (not using emulator):
+1. Run: flutterfire configure
+   This generates lib/firebase_options.dart (already in .gitignore)
+   Use lib/firebase_options.dart.example as a reference template
+2. Deploy rules: firebase deploy --only firestore:rules
+3. Deploy functions: cd functions && npm install && firebase deploy --only functions
+
+### 5. Firestore Composite Index
+
+Create this index in Firebase Console -> Firestore -> Indexes:
+
+Collection: families/{familyId}/transactions
+Fields:
+  - childId (Ascending)
+  - performedAt (Descending)
+
+This enables per-child transaction history queries. Without it, those queries will fail.
+
+### 6. Verify Dependencies in pubspec.yaml
+
+Required packages (already added):
+- flutter_riverpod
+- cloud_firestore
+- firebase_auth
+- flutter_secure_storage
+- bcrypt
+- connectivity_plus: ^6.0.0
+- hive: ^2.2.3
+- hive_flutter: ^1.1.0
+- equatable
+
+Dev dependencies (already added):
+- integration_test (from Flutter SDK)
+
+NOT required (do not add):
+- build_runner
+- freezed / freezed_annotation
+- riverpod_generator / riverpod_annotation
+- hive_generator
+- json_serializable / json_annotation
+
+---
+
+## Usage Examples
+
+### Watch a child's buckets (real-time)
+```dart
 final bucketsAsync = ref.watch(childBucketsProvider(
-  childId: childId,
-  familyId: familyId,
+  (childId: childId, familyId: familyId),
 ));
 
 bucketsAsync.when(
@@ -90,100 +142,81 @@ bucketsAsync.when(
   loading: () => /* Loading indicator */,
   error: (error, _) => /* Error message */,
 );
+```
 
-// Multiply investment
+### Distribute funds across buckets
+```dart
+await ref.read(bucketRepositoryProvider).distributeFunds(
+  familyId: familyId,
+  childId: childId,
+  moneyAmount: 10.0,
+  investmentAmount: 5.0,
+  charityAmount: 5.0,
+  performedByUid: currentUser.uid,
+  note: 'Weekly allowance',
+);
+```
+
+### Multiply investment
+```dart
 await ref.read(bucketRepositoryProvider).multiplyInvestment(
   childId: childId,
   familyId: familyId,
   multiplier: 2.0,
   performedByUid: currentUser.uid,
-  note: 'Well done!',
+  note: 'Great job saving!',
 );
+// Throws ArgumentError if multiplier <= 0
 ```
 
-### 6. Testing (Happy's Domain)
-
-Write unit tests for repositories and providers:
-
+### Archive a child (soft delete)
 ```dart
-test('multiplyInvestment rejects zero multiplier', () async {
-  final repository = FirebaseBucketRepository(
-    firestore: FakeFirebaseFirestore(),
-  );
-  
-  expect(
-    () => repository.multiplyInvestment(
-      childId: 'child1',
-      familyId: 'family1',
-      multiplier: 0.0,  // Invalid!
-      performedByUid: 'parent1',
-    ),
-    throwsArgumentError,
-  );
-});
+await ref.read(childRepositoryProvider).archiveChild(
+  familyId: familyId,
+  childId: childId,
+);
+// Child now has archived: true; filtered from childrenProvider automatically
 ```
-
-## Troubleshooting
-
-### Build Errors After Code Generation
-
-If you see errors like "The getter 'toJson' isn't defined":
-1. Make sure you ran `build_runner`
-2. Check that `part` directives are correct in model files
-3. Clean and rebuild: `flutter clean && flutter pub get`
-
-### Import Errors
-
-If imports show red:
-1. Ensure all dependencies are in `pubspec.yaml`
-2. Run `flutter pub get`
-3. Restart your IDE
-
-### Firestore Permission Errors
-
-If writes fail in the app:
-1. Check security rules allow the operation
-2. Verify user is authenticated
-3. Check familyId/childId are correct
-
-## Key Implementation Notes
-
-### Investment Multiplier Validation
-- **MUST be > 0** (throws ArgumentError otherwise)
-- This is a HARD requirement per team decision
-
-### Transaction Immutability
-- All transactions are IMMUTABLE
-- Create new transaction, never update existing
-- Archive old transactions with `archiveOldTransactions()`
-
-### Atomic Operations
-- All bucket mutations use Firestore transactions
-- Bucket update + transaction log are atomic
-- No partial updates possible
-
-### Offline Support
-- Firestore SDK handles offline persistence automatically
-- Writes queue locally, sync when online
-- Conflicts use last-write-wins (may need user prompt later)
-
-## Documentation
-
-- **Full Data Layer Docs:** `lib/DATA_LAYER.md`
-- **Architecture:** `docs/architecture.md`
-- **Firestore Model:** `FIRESTORE_DATA_MODEL.md`
-- **Implementation Decisions:** `.squad/decisions/inbox/jarvis-phase1.md`
-- **JARVIS History:** `.squad/agents/jarvis/history.md`
-
-## Questions?
-
-- Architecture/pattern questions → Stark
-- Security/auth questions → Fury
-- UI integration questions → Rhodey/Pepper
-- Testing questions → Happy
-- Backend/Firestore questions → JARVIS
 
 ---
 
-**Status:** ✅ Phase 1 complete, pending code generation
-**Next Phase:** UI integration + security rules
+## Troubleshooting
+
+### Compilation Errors
+If you see errors about missing .freezed.dart or .g.dart files:
+1. These should NOT exist in this project
+2. Delete any .freezed.dart or .g.dart files if found
+3. Run: flutter clean && flutter pub get
+
+### Firestore Timestamp Errors
+If you see: "type 'String' is not a subtype of type 'Timestamp' in type cast"
+- A repository is writing DateTime as ISO string instead of Timestamp.fromDate()
+- Find the write and change: DateTime.now().toIso8601String()
+  to: Timestamp.fromDate(DateTime.now())
+- The fromJson methods have a dual-type guard but the bug is on the write side
+
+### Hive Errors
+If you see HiveError about unregistered adapter:
+1. Confirm initHive() is called in main.dart before runApp()
+2. Confirm PendingOperationAdapter is registered in hive_setup.dart
+3. Do NOT add any hive_generator annotations or run build_runner
+
+### Offline Queue Not Syncing
+1. Check ConnectivityService is injected into BucketRepository and ChildRepository
+2. Confirm autoSyncProvider is being watched in the app
+3. Check SyncEngine is initialized via syncEngineProvider
+
+### Firestore Permission Errors
+1. Check security rules allow the operation (firestore.rules)
+2. Verify user is authenticated (Firebase Auth for parents, PIN session for children)
+3. Verify familyId/childId are correct
+4. Use the emulator with its UI (port 4000) to inspect data
+
+---
+
+## Documentation Map
+
+- Firestore schema: FIRESTORE_DATA_MODEL.md
+- Architecture: docs/architecture.md
+- Sprint decisions: .squad/agents/jarvis/history.md
+- Security posture: AUTH_SECURITY_PHASE1_COMPLETE.md

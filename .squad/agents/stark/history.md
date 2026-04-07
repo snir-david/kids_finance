@@ -187,3 +187,48 @@
   - Requires real Firebase config for deployment
   - Documentation updated to current state
   - Custom app icon recommended before public beta
+
+### 2026-04-08: Architecture Documentation & FRD Creation
+- **Status:** ✅ DOCUMENTATION COMPLETE
+- **Scope:** Reviewed and updated architecture docs, created comprehensive FRD
+- **Documents Updated:**
+  - `AUTH_ARCHITECTURE.md` — Fully rewritten to reflect actual implementation:
+    - Two-tier auth model (Firebase Auth parents + bcrypt PIN children)
+    - PIN brute-force lockout (5 attempts → 15min, FlutterSecureStorage persistence)
+    - 24h child session expiry (local + Firestore dual storage)
+    - JWT spoofing fix: Cloud Functions verify family via Firestore `parentIds[]`, not JWT claims
+    - Forgot password flow documented
+    - All security risks marked as MITIGATED with implementation details
+  - `INTEGRATION_STATUS.md` — Updated to Sprint 5D complete:
+    - 57 Dart files, 0 lint issues
+    - Full file structure documented
+    - Sprint 5A-5D delivery summary added
+    - All checklist items marked complete
+  - `SCAFFOLD_CHECKLIST.md` — Complete rewrite:
+    - Converted from Phase 1 scaffold to full implementation status
+    - All features categorized with status and file references
+    - Out-of-scope items explicitly listed
+    - Statistics: 57 files, 8 screens, 4 Cloud Functions
+- **Document Created:**
+  - `FRD.md` — Comprehensive Functional Requirements Document:
+    - 80+ numbered requirements (FR-* and NFR-*)
+    - 2 user roles, 18 auth requirements, 25 parent features
+    - 9 child features, 11 bucket requirements, 15 offline requirements
+    - 15 security requirements, 7 non-functional requirements
+    - All requirements marked with implementation status (✅/🔶/❌)
+    - Appendices: Data model reference, glossary
+- **Verification:** `flutter analyze lib/` = 0 issues
+- **Key Learnings:**
+  - Two-tier auth (Firebase Auth + local PIN) is a clean pattern for family apps
+  - JWT spoofing prevention requires Firestore-based verification, not just JWT claims
+  - 24h session with dual storage (local + Firestore) provides both fast reads and security
+  - Soft-delete only (no hard delete) simplifies data integrity
+
+
+### 2026-04-07: Documentation Refresh - FRD & Architecture Update
+
+**Status:** COMPLETE
+
+Created FRD.md (80+ requirements) and updated AUTH_ARCHITECTURE.md, INTEGRATION_STATUS.md, SCAFFOLD_CHECKLIST.md for Sprint 5D state.
+
+Orchestration Log: .squad/orchestration-log/2026-04-07T00-00-00Z-stark-docs-frd.md

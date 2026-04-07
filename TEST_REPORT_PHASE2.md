@@ -1,8 +1,12 @@
 # KidsFinance Phase 2 - Test Coverage Report
 
+> ⚠️ **Superseded.** This report is archived. The canonical test report covering all phases and sprints is now **[TEST_REPORT.md](./TEST_REPORT.md)**. The Phase 2 widget/screen coverage documented below has been incorporated into the canonical report.
+
+---
+
 **QA Lead:** Happy
-**Date:** Current Session
-**Status:** ✅ Complete & Ready to Ship
+**Date:** Current Session (archived Sprint 5D)
+**Status:** ✅ Incorporated into TEST_REPORT.md
 
 ## Executive Summary
 

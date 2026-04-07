@@ -208,3 +208,53 @@ Sets `archived: true` on Firestore child document. No data deleted.
 - `PinService._createSession()` now writes `sessionExpiresAt: Timestamp.fromDate(expiry)` to Firestore child document
 - Session duration changed: 30 days → 24 hours
 
+## Learnings
+
+### 2026-04-08: Documentation Audit (Sprints 5A–5D)
+
+Audited and rewrote four documentation files to match actual implemented code:
+
+**FIRESTORE_DATA_MODEL.md** — Replaced entire content (v1.0 → v2.0):
+- Removed /parents subcollection (never existed — parents live in parentIds array)
+- Removed /userProfiles top-level collection (not actually implemented)
+- Removed nested `buckets` map from child doc (buckets are a separate subcollection)
+- Added Bucket document schema with correct fields: `{id, childId, familyId, type, balance, lastUpdatedAt}`
+- Updated transaction path: at family level (/families/{fId}/transactions), NOT child level
+- Replaced old transaction types (investment_multiply, charity_donate, money_adjust, bucket_transfer)
+  with actual enum values: moneySet, investmentMultiplied, charityDonated, moneyAdded, moneyRemoved, distributed
+- Updated transaction fields to match Transaction model (flat structure, not nested `data` map)
+- Added Timestamp rule section (all dates use Timestamp.fromDate(), never ISO strings)
+- Added offline sync summary, security rules summary, Cloud Functions table
+
+**DATA_LAYER_MANIFEST.md** — Full rewrite:
+- Removed "Code Generation Required" section (build_runner is NOT used)
+- Added offline layer (OfflineQueue, SyncEngine, ConnectivityService, conflict.dart)
+- Added auth services (auth_service, pin_service, pin_attempt_tracker)
+- Added emulator/integration test files
+- Updated provider list (auth_providers + session_provider added)
+- Added correct Firestore collection paths with NOTE about transactions being family-level
+- Updated validation checklist
+
+**SETUP_DATA_LAYER.md** — Full rewrite:
+- Added prominent "DO NOT run build_runner" warning
+- Added Hive TypeAdapter section with explicit warning against hive_generator
+- Added Firebase Emulator Setup section (emulator ports, seed scripts, test helper usage)
+- Removed outdated Code Generation Required section
+- Added distributeFunds and archiveChild usage examples
+- Added firestore.rules troubleshooting steps
+
+**AUTH_SECURITY_PHASE1_COMPLETE.md** — Full replacement (Fury's old doc → combined security status):
+- Added two-tier auth architecture table (parent vs child)
+- Documented Sprint 5C security hardening in detail (JWT spoofing fix, PIN lockout, session expiry, rule validators)
+- Added "Current Security Posture" table mapping threats to protections
+- Added Cloud Functions auth + validation table
+- Added Known Limitations section (iOS: not supported, Web: not supported, no Google Sign-In, no remote PIN reset)
+
+
+### 2026-04-07: Documentation Audit - Data Layer Overhaul
+
+**Status:** COMPLETE
+
+Audited and corrected critical data layer docs: FIRESTORE_DATA_MODEL.md (v2.0), DATA_LAYER_MANIFEST.md (removed build_runner myth), SETUP_DATA_LAYER.md (replaced harmful steps), AUTH_SECURITY_PHASE1_COMPLETE.md (updated to Sprint 5C security).
+
+Orchestration Log: .squad/orchestration-log/2026-04-07T00-00-00Z-jarvis-docs.md
