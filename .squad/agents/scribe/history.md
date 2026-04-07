@@ -42,3 +42,17 @@ Agent Scribe initialized and ready for work.
 - child_picker_screen.dart: Add context.canPop() guard on back button
 
 **Status:** ✅ Committed — All changes staged, committed cleanly, and verified with git log.
+
+## Session: Sprint 7A — Theme & Localization
+
+**Commit:** `31d9f5d` — feat: dark theme + Hebrew localization (Sprint 7A)
+
+**Summary:**
+- ThemeModeNotifier + LocaleNotifier with SharedPreferences persistence
+- Material 3 light/dark themes with AppTheme definitions
+- Manual AppLocalizations (en/he) without build_runner dependency
+- Settings screen with theme toggle and language selector
+- RTL layout support via GlobalWidgetsLocalizations delegate
+- Settings entry (⚙️) in parent AppBar → /settings route
+
+**Status:** ✅ Committed
