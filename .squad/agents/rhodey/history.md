@@ -583,3 +583,69 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
 - ✅ Parent can revoke sessions by setting sessionExpiresAt to past date in Firestore  
 - ✅ Child with expired session cannot access any child screen (forced back to PIN gate)  
 
+
+---
+
+## [2026-04-07] Child Mode Entry Point
+
+**Task:** Add Hand to Child button to parent home screen and back button to child picker screen.
+
+**Changes Made:**
+
+### 1. parent_home_screen.dart
+- Added IconButton(icon: Icons.child_care, tooltip: Hand to Child) to AppBar actions before PopupMenuButton.
+- Uses context.push('/child-picker') so the parent can press Back to cancel.
+
+### 2. child_picker_screen.dart
+- Added white arrow_back IconButton at top of gradient body (inside SafeArea).
+- Wrapped familyIdAsync.when(...) in Expanded inside a Column so the back button is always visible.
+- Back button calls context.pop() to return to parent home.
+
+**flutter analyze result:** 2 pre-existing warnings, 0 new issues.
+
+
+### 2026-04-09: Shared Bucket Sheets + Tappable Parent Bucket Cards + Auto-Distribute Feedback
+- **Status:** ✅ COMPLETE
+- **Requested by:** snirnahari
+
+**Deliverables:**
+
+1. **NEW lib/features/buckets/presentation/widgets/bucket_action_sheets.dart**
+   - Extracted _CharitySheet, _InvestmentSheet, _MoneySheet, _SheetHandle from child_home_screen.dart
+   - Renamed as public classes: CharityActionSheet, InvestmentActionSheet, MoneyActionSheet, SheetHandle
+   - All logic kept 100% intact — same UI, same repo calls, same error handling
+   - Added optional VoidCallback? onComplete to each sheet widget
+   - onComplete?.call() fires after every successful operation (before Navigator.pop)
+   - Allows callers to invalidate providers or show SnackBars after an action
+
+2. **child_home_screen.dart updated**
+   - Added import for ucket_action_sheets.dart
+   - Removed celebration_overlay.dart import (no longer needed directly)
+   - Replaced all _CharitySheet, _InvestmentSheet, _MoneySheet, _SheetHandle references with public names
+   - Removed ~600 lines of duplicate class definitions now living in shared file
+
+3. **parent_home_screen.dart — _BucketCard tappable**
+   - Added optional VoidCallback? onTap field to _BucketCard
+   - Wrapped existing Container with InkWell (ripple effect on tap)
+   - When onTap != null: shows Icons.touch_app (size 14) next to balance as tap hint
+   - Wrapped inner content Column in Expanded to prevent overflow
+   - Removed ucket_repository.dart import (not needed directly)
+
+4. **parent_home_screen.dart — _buildChildBuckets wired taps**
+   - All three _BucketCard widgets now pass onTap opening showModalBottomSheet
+   - Money → MoneyActionSheet, Investment → InvestmentActionSheet, Charity → CharityActionSheet
+   - Each sheet gets epo: ref.read(bucketRepositoryProvider)
+   - Each sheet gets onComplete: () => ref.invalidate(childBucketsProvider(...)) for instant refresh
+
+5. **parent_home_screen.dart — _DistributeFundsDialog onDistributed callback**
+   - Added optional VoidCallback? onDistributed to _DistributeFundsDialog
+   - On success: calls widget.onDistributed?.call() then celebration — removed hardcoded SnackBar from dialog
+   - _showDistributeFundsDialog now passes onDistributed with SnackBar "✅ Added to [Name]'s buckets!" (green)
+   - Buckets auto-refresh via stream — no manual invalidation needed in distribute path
+
+**Files Changed:**
+- **NEW** lib/features/buckets/presentation/widgets/bucket_action_sheets.dart
+- lib/features/auth/presentation/child_home_screen.dart
+- lib/features/auth/presentation/parent_home_screen.dart
+
+**Flutter Analyze:** ✅ 0 issues

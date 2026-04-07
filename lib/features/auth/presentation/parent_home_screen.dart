@@ -7,6 +7,7 @@ import '../../../core/offline/widgets/conflict_resolution_dialog.dart';
 import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
+import '../../buckets/presentation/widgets/bucket_action_sheets.dart';
 import '../../buckets/presentation/widgets/celebration_overlay.dart';
 import '../../buckets/providers/buckets_providers.dart';
 import '../../children/domain/child.dart';
@@ -130,6 +131,11 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                     ),
                   ),
                 ),
+              IconButton(
+                icon: const Icon(Icons.child_care),
+                tooltip: 'Hand to Child',
+                onPressed: () => context.push('/child-picker'),
+              ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (value) async {
@@ -464,12 +470,27 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
 
               const SizedBox(height: 24),
 
-              // Three buckets below - display only
+              // Three buckets below - tappable to open action sheets
               _BucketCard(
                 emoji: '💰',
                 name: 'Money',
                 balance: moneyBucket.balance,
                 color: AppTheme.moneyColor,
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (_) => MoneyActionSheet(
+                    familyId: familyId,
+                    childId: child.id,
+                    moneyBalance: moneyBucket.balance,
+                    repo: ref.read(bucketRepositoryProvider),
+                    onComplete: () => ref.invalidate(childBucketsProvider(
+                        (childId: child.id, familyId: familyId))),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               _BucketCard(
@@ -477,6 +498,21 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 name: 'Investment',
                 balance: investmentBucket.balance,
                 color: AppTheme.investmentsColor,
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (_) => InvestmentActionSheet(
+                    familyId: familyId,
+                    childId: child.id,
+                    investmentBalance: investmentBucket.balance,
+                    repo: ref.read(bucketRepositoryProvider),
+                    onComplete: () => ref.invalidate(childBucketsProvider(
+                        (childId: child.id, familyId: familyId))),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               _BucketCard(
@@ -484,6 +520,21 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 name: 'Charity',
                 balance: charityBucket.balance,
                 color: AppTheme.charityColor,
+                onTap: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  builder: (_) => CharityActionSheet(
+                    familyId: familyId,
+                    childId: child.id,
+                    charityBalance: charityBucket.balance,
+                    repo: ref.read(bucketRepositoryProvider),
+                    onComplete: () => ref.invalidate(childBucketsProvider(
+                        (childId: child.id, familyId: familyId))),
+                  ),
+                ),
               ),
             ],
           ),
@@ -548,6 +599,16 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
         child: child,
         performedByUid: uid,
         ref: ref,
+        onDistributed: () {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("✅ Added to ${child.displayName}'s buckets!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -577,16 +638,21 @@ class _BucketCard extends StatelessWidget {
     required this.name,
     required this.balance,
     required this.color,
+    this.onTap,
   });
 
   final String emoji;
   final String name;
   final double balance;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -613,22 +679,33 @@ class _BucketCard extends StatelessWidget {
             child: Text(emoji, style: const TextStyle(fontSize: 24)),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(
-                '\$${balance.toStringAsFixed(2)}',
-                style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.w700, color: color),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '\$${balance.toStringAsFixed(2)}',
+                      style: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w700, color: color),
+                    ),
+                    if (onTap != null) ...[
+                      const SizedBox(width: 6),
+                      Icon(Icons.touch_app, size: 14, color: color.withValues(alpha: 0.5)),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -1158,11 +1235,13 @@ class _DistributeFundsDialog extends StatefulWidget {
     required this.child,
     required this.performedByUid,
     required this.ref,
+    this.onDistributed,
   });
   final String familyId;
   final Child child;
   final String performedByUid;
   final WidgetRef ref;
+  final VoidCallback? onDistributed;
 
   @override
   State<_DistributeFundsDialog> createState() => _DistributeFundsDialogState();
@@ -1290,12 +1369,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ Added to ${widget.child.displayName}\'s buckets!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        widget.onDistributed?.call();
         _showCelebration(context, CelebrationType.money);
       }
     } catch (e) {

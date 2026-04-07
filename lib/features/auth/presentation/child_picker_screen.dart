@@ -26,7 +26,16 @@ class ChildPickerScreen extends ConsumerWidget {
           ),
         ),
         child: SafeArea(
-          child: familyIdAsync.when(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                tooltip: 'Back to Parent',
+                onPressed: () => context.pop(),
+              ),
+              Expanded(
+                child: familyIdAsync.when(
             data: (familyId) {
               if (familyId == null) {
                 return _buildError('No family found. Please sign in.');
@@ -39,6 +48,9 @@ class ChildPickerScreen extends ConsumerWidget {
               ),
             ),
             error: (error, stack) => _buildError('Error: $error'),
+          ),
+              ),
+            ],
           ),
         ),
       ),
