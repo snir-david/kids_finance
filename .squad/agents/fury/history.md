@@ -208,8 +208,55 @@
 - Ready for integration testing by Happy
 - Ready for UI polish by Pepper (can refactor to use PinInputWidget when available)
 
-**Next Steps:**
-- Pepper to create reusable PinInputWidget component
-- Refactor ChildPinScreen to use PinInputWidget (optional cleanup)
-- Happy to write integration tests for auth flows
-- Rhodey to test on actual Android device
+### 2026-06-14: Sprint 5C — Security Polish Complete
+
+**Status:** ✅ SPRINT 5C SECURITY HARDENING COMPLETE
+
+**Critical Fix — JWT Family-ID Claim Spoofing:**
+- Cloud Functions previously trusted `context.auth.token.familyId` which a parent could manipulate
+  by writing any `familyId` to their own `userProfiles` document (triggering `onSetCustomClaims`).
+- Fixed by replacing JWT family check with a Firestore `parentIds` array read in every callable
+  function (`assertFamilyMembership(uid, familyId)`). Firestore state cannot be spoofed via user-
+  controlled documents.
+
+**Cloud Functions Hardened (`functions/src/index.ts`):**
+- Added shared `assertParentAuth()` and `assertFamilyMembership()` helpers used by all callables
+- Added `assertNonEmptyString()` for all ID fields — rejects empty/whitespace strings
+- `onMultiplyInvestment`: explicit `typeof + isFinite` guard on multiplier; added `newBalance < currentBalance` rejection
+- `onSetMoney`: explicit `typeof + isFinite` guard on amount
+- `onDonateCharity`: precondition guard — rejects if charity balance already 0
+- `onSetCustomClaims`: role allowlist (`['parent']`) — unknown roles clear claims and log a warning
+
+**Firestore Rules Hardened (`firestore.rules`):**
+- `validBucketCreate()`: required fields, non-empty IDs, `balance >= 0`
+- `validBucketUpdate()`: `balance >= 0`
+- `validChildCreate()`: required fields, name length 1–50, non-empty IDs and pinHash
+- Explicit `allow delete: if false` on children and buckets (soft-delete only)
+- Comments explaining the parentIds-over-JWT-claims design decision
+
+**PIN Brute-Force Tracker Extracted (`pin_attempt_tracker.dart`):**
+- `PinAttemptTracker`: encapsulated brute-force logic with typed public API
+- `PinLockoutException(lockedUntil)`: typed exception replacing generic string errors
+- `PinService` fully delegates to tracker — no duplicate storage key logic
+- Storage key names standardised: `pin_attempts_{childId}`, `pin_lockout_until_{childId}`
+
+**Session Expiry Enforced:**
+- `PinService` session duration changed: 30 days → 24 hours
+- `PinService._createSession()` now writes `sessionExpiresAt` to Firestore child document
+- `session_provider.dart`: `childSessionValidProvider` (Riverpod `Provider<SessionState>`)
+  watches Firestore `sessionExpiresAt` and returns `valid / expired / notAuthenticated`
+- `ChildHomeScreen.build()` checks session state on every render and redirects to `/child-pin` on expiry
+
+**Files Created:**
+- `lib/features/auth/data/pin_attempt_tracker.dart`
+- `lib/features/auth/providers/session_provider.dart`
+- `.squad/decisions/inbox/fury-sprint5c-audit.md`
+
+**Files Modified:**
+- `lib/features/auth/data/pin_service.dart`
+- `lib/features/auth/presentation/child_home_screen.dart`
+- `firestore.rules`
+- `functions/src/index.ts`
+
+**`flutter analyze`:** ✅ 0 issues in lib/
+

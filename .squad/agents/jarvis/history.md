@@ -154,3 +154,29 @@ Sets `archived: true` on Firestore child document. No data deleted.
 
 **Code Quality:** flutter analyze = **0 errors** ✅
 
+## Sprint 5C — 2026-04-07: Security Hardening
+
+**Status:** ✅ COMPLETE
+
+### JARVIS — Cloud Functions Integration
+**Note:** JARVIS did not work on this sprint (Cloud Functions authored by Fury).
+
+**Cloud Functions Changes (by Fury, for JARVIS awareness):**
+- `functions/src/index.ts` — All callable functions (`onMultiplyInvestment`, `onDonateCharity`, `onSetMoney`) now verify family membership via Firestore `families/{familyId}.parentIds` array instead of trusting JWT `familyId` claim
+- `assertFamilyMembership(uid, familyId)` replaces JWT-based family check — throws `PERMISSION_DENIED` unless uid explicitly in parentIds array
+- All numeric inputs validated: `typeof x !== 'number' || !isFinite(x)` check prevents Infinity/NaN/string attacks
+- Role claim validation: `onSetCustomClaims` enforces allowlist (`validRoles = ['parent']`)
+- Charity bucket precondition: only execute if `balance > 0`
+
+**Firestore Rules Changes (by Fury, for JARVIS awareness):**
+- Added `validBucketCreate()` and `validBucketUpdate()` rule helpers
+- `validBucketCreate()` enforces: required fields (balance, childId, familyId, type, lastUpdatedAt), non-empty string IDs, `balance >= 0`
+- `validBucketUpdate()` enforces: `balance >= 0` on every update
+- Added explicit `allow delete: if false` on children and buckets (soft-delete only)
+- Multiplier events: preserved existing `multiplier > 0` validation
+
+**Impact on Data Layer:**
+- No repository changes needed (Cloud Functions validate at write-time)
+- `PinService._createSession()` now writes `sessionExpiresAt: Timestamp.fromDate(expiry)` to Firestore child document
+- Session duration changed: 30 days → 24 hours
+

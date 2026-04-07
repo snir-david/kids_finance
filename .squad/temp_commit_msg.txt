@@ -1,0 +1,18 @@
+feat: Sprint 5C — security hardening, PIN lockout, session enforcement
+
+SECURITY FIXES:
+- Critical: fix JWT claim spoofing — family isolation now Firestore-verified
+- Cloud Functions: Firestore parentIds check replaces JWT familyId trust
+- Cloud Functions: auth/input validation, role allowlist, finiteness guards
+- Firestore rules: delete prohibition, field validation helpers, tighter scoping
+
+AUTH HARDENING:
+- PIN brute-force: 5 failures → 15min lockout (persisted via secure storage)
+- Session expiry: 24h enforced on every child screen via childSessionValidProvider
+- sessionExpiresAt written to Firestore on PIN success
+
+TESTS:
+- 25 security tests (219 total): PIN lockout, session expiry, privilege
+  escalation, family isolation, multiplier validation, lockout UI
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

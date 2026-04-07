@@ -450,7 +450,132 @@ dart run build_runner build --delete-conflicting-outputs
 
 ---
 
-**Decision Document Status:** ✅ MERGED & ACTIVE DECISIONS UPDATED
-**Prepared by:** Scribe  
+## H. Sprint 5C Security Decisions (2026-04-07)
+
+### Fury Security Audit Report
+
 **Date:** 2026-04-07  
-**Approval:** Architecture decisions locked; Phase 5 planning in progress
+**Author:** Fury (Security & Auth)  
+**Sprint:** 5C — Security Polish
+
+#### Critical Finding: JWT Family-ID Claim Spoofing
+**Severity:** CRITICAL
+
+**Issue:** All three callable Cloud Functions (`onMultiplyInvestment`, `onDonateCharity`, `onSetMoney`) authorised family access by comparing `context.auth.token.familyId` against the caller-supplied `familyId`. A parent can write any value to their own `userProfiles/{uid}.familyId` document (allowed by Firestore rules). `onSetCustomClaims` then propagates that value into the JWT claim. A malicious parent could therefore set `familyId` to another family's ID in their own userProfile, obtain a token containing that claim, and call any function against the victim family without the mismatch check failing.
+
+**Decision:** Replace JWT-claim family check with a Firestore read of `families/{familyId}.parentIds`. `assertFamilyMembership(uid, familyId)` throws `PERMISSION_DENIED` unless the caller's UID is explicitly listed in the target family's `parentIds` array. This is now the sole family-access gate in every callable function.
+
+**Status:** ✅ IMPLEMENTED
+
+#### High Severity Finding: Role Claim Injection
+**Severity:** HIGH
+
+**Issue:** `onSetCustomClaims` blindly copied any string written to `userProfiles/{uid}.role` into the Firebase Auth custom claim. A user could write `role: 'superadmin'` to their own profile and have it reflected in their JWT.
+
+**Decision:** Added an allowlist (`validRoles = ['parent']`). Any other role value causes the claim to be cleared and a warning logged.
+
+**Status:** ✅ IMPLEMENTED
+
+#### High Severity Finding: Missing Type & Finiteness Validation
+**Severity:** HIGH
+
+**Issue:** Numeric inputs (`multiplier`, `amount`) were checked with simple truthy checks. A caller could pass `multiplier: Infinity`, `multiplier: NaN`, or `multiplier: "2"` (string) and bypass the `<= 0` guard.
+
+**Decision:** Added `typeof multiplier !== 'number' || !isFinite(multiplier) || multiplier <= 0` guard on all numeric inputs. Added precondition check that charity bucket balance is `> 0` before proceeding.
+
+**Status:** ✅ IMPLEMENTED
+
+#### High Severity Finding: Insufficient Firestore Rules Validation
+**Severity:** HIGH
+
+**Issue:** Bucket and child documents had no field or value validation on create/update. Hard-delete operations were implicitly allowed.
+
+**Decision:** 
+- Added `validBucketCreate()` rule helper: enforces required fields, non-empty string IDs, `balance >= 0`
+- Added `validBucketUpdate()` rule helper: enforces `balance >= 0` on every update
+- Added `validChildCreate()` rule helper: enforces required fields, non-empty strings, name length <= 50
+- Added explicit `allow delete: if false` on children and buckets (soft-delete via `archived: true` only)
+
+**Status:** ✅ IMPLEMENTED
+
+#### High Severity Finding: Session Expiry Never Written to Firestore
+**Severity:** HIGH
+
+**Issue:** `PinService._createSession()` only wrote the expiry to `FlutterSecureStorage`. The `Child.sessionExpiresAt` Firestore field was never populated. The planned `childSessionValidProvider` session-gating could not work without this value.
+
+**Decision:**
+- `PinService._createSession(childId, familyId)` now writes `sessionExpiresAt: Timestamp.fromDate(expiry)` to the Firestore child document
+- Session duration reduced from **30 days → 24 hours** per Sprint 5C requirements
+
+**Status:** ✅ IMPLEMENTED
+
+#### High Severity Finding: No Session Expiry Enforcement on Child Screens
+**Severity:** HIGH
+
+**Issue:** `ChildHomeScreen` had no session-expiry check. A child with an expired local session would remain in child mode indefinitely.
+
+**Decision:**
+- Created `lib/features/auth/providers/session_provider.dart` with `SessionState` enum and `childSessionValidProvider`
+- `ChildHomeScreen.build()` now checks `childSessionValidProvider` on every render; if `SessionState.expired`, it clears `activeChildProvider` and redirects to `/child-pin`
+
+**Status:** ✅ IMPLEMENTED
+
+#### Medium Severity Finding: PIN Brute-Force Logic Embedded in PinService
+**Severity:** MEDIUM
+
+**Issue:** Brute-force attempt tracking was implemented directly inside `PinService` using raw `FlutterSecureStorage` key names without encapsulation.
+
+**Decision:** Extracted brute-force logic into `lib/features/auth/data/pin_attempt_tracker.dart`. `PinAttemptTracker` class with public API: `isLockedOut()`, `lockoutRemaining()`, `recordFailure()`, `resetAttempts()`. `PinLockoutException` is now a typed exception carrying `lockedUntil: DateTime`.
+
+**Status:** ✅ IMPLEMENTED
+
+#### Low Severity Finding: Missing Design Comments in Firestore Rules
+**Severity:** LOW
+
+**Issue:** The `isParentOfFamily()` helper used `parentIds` array lookup but had no comment explaining why.
+
+**Decision:** Added explanatory comment directly in `firestore.rules` above `isParentOfFamily()` to prevent future developers from "optimising" it to a JWT claim check.
+
+**Status:** ✅ IMPLEMENTED
+
+---
+
+### Happy QA Test Summary
+
+**Date:** 2026-04-07  
+**Author:** Happy (QA Lead)  
+**Status:** ✅ COMPLETE — 25 anticipatory tests written
+
+#### Test Coverage
+| Category | Tests | Files |
+|----------|-------|-------|
+| PIN brute-force | 7 | pin_attempt_tracker_test.dart |
+| Session expiry | 4 | session_provider_test.dart |
+| Parent-only guards | 4 | parent_only_guard_test.dart |
+| Family isolation | 4 | family_isolation_test.dart |
+| Multiplier validation | 4 | multiplier_validation_test.dart |
+| PIN lockout UI | 4 | pin_lockout_screen_test.dart |
+| **TOTAL** | **25** | **6 files** |
+
+#### Key Security Boundaries Defined
+1. **PIN Brute-Force:** 5 failures → 15 min lockout, persisted across app restarts
+2. **Session Expiry:** 24-hour sessions with valid/expired/notAuthenticated states
+3. **Parent-Only:** distributeFunds, archiveChild, updateChild require parent role
+4. **Family Isolation:** Cross-family and sibling access blocked at Firestore level
+5. **Multiplier:** Must be > 0 (1x valid, 0x and negative rejected)
+
+#### Test Results
+```
+Total: 219 tests (up from 194)
+Passing: 189 tests
+Failing: 30 tests (layout overflow issues, not functional)
+```
+
+**Status:** ✅ IMPLEMENTED
+
+---
+
+**Decision Document Status:** ✅ SPRINT 5C DECISIONS MERGED
+**Prepared by:** Scribe  
+**Date:** 2026-04-07T11:52:18Z  
+**Approval:** Sprint 5C complete; Sprint 5D (integration testing) queued

@@ -9,6 +9,7 @@ import '../../children/providers/children_providers.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/auth_providers.dart';
+import '../providers/session_provider.dart';
 
 Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
   return Bucket(
@@ -26,6 +27,20 @@ class ChildHomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Session expiry check — redirect to PIN if the 24-hour session has lapsed.
+    final sessionState = ref.watch(childSessionValidProvider);
+    if (sessionState == SessionState.expired) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          ref.read(activeChildProvider.notifier).setState(null);
+          context.go('/child-pin');
+        }
+      });
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final childId = ref.watch(activeChildProvider);
     
     if (childId == null) {

@@ -4,47 +4,88 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 const db = admin.firestore();
 
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Asserts the caller is authenticated with the 'parent' role.
+ * Throws an HttpsError otherwise.
+ */
+function assertParentAuth(context: functions.https.CallableContext): void {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be authenticated"
+    );
+  }
+  if (context.auth.token.role !== "parent") {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only parents can perform this action"
+    );
+  }
+}
+
+/**
+ * Verifies that the authenticated caller is actually in the target family's
+ * parentIds array in Firestore. This prevents a malicious user from
+ * manipulating their own userProfile.familyId JWT claim to access another
+ * family's data.
+ */
+async function assertFamilyMembership(
+  uid: string,
+  familyId: string
+): Promise<void> {
+  const familyDoc = await db.collection("families").doc(familyId).get();
+  if (!familyDoc.exists) {
+    throw new functions.https.HttpsError("not-found", "Family not found");
+  }
+  const parentIds = (familyDoc.data()?.parentIds as string[]) ?? [];
+  if (!parentIds.includes(uid)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You are not a member of this family"
+    );
+  }
+}
+
+/**
+ * Asserts a value is a non-empty string.
+ */
+function assertNonEmptyString(value: unknown, fieldName: string): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      `${fieldName} must be a non-empty string`
+    );
+  }
+}
+
+// ── Cloud Functions ───────────────────────────────────────────────────────────
+
 export const onMultiplyInvestment = functions.https.onCall(
   async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Must be authenticated"
-      );
-    }
-
-    const role = context.auth.token.role;
-    if (role !== "parent") {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "Only parents can multiply investments"
-      );
-    }
+    assertParentAuth(context);
 
     const {familyId, childId, multiplier} = data;
 
-    if (!familyId || !childId || multiplier === undefined) {
+    assertNonEmptyString(familyId, "familyId");
+    assertNonEmptyString(childId, "childId");
+
+    if (
+      multiplier === undefined ||
+      multiplier === null ||
+      typeof multiplier !== "number" ||
+      !isFinite(multiplier) ||
+      multiplier <= 0
+    ) {
       throw new functions.https.HttpsError(
         "invalid-argument",
-        "Missing required fields"
+        "multiplier must be a finite number greater than 0"
       );
     }
 
-    if (multiplier <= 0) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Multiplier must be greater than 0"
-      );
-    }
-
-    if (context.auth.token.familyId !== familyId) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "Family ID mismatch"
-      );
-    }
-
-    const batch = db.batch();
+    // Verify Firestore family membership (not just the JWT claim).
+    await assertFamilyMembership(context.auth!.uid, familyId);
 
     const investmentBucketRef = db
       .collection("families")
@@ -56,11 +97,20 @@ export const onMultiplyInvestment = functions.https.onCall(
 
     const bucketDoc = await investmentBucketRef.get();
     if (!bucketDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Bucket not found");
+      throw new functions.https.HttpsError("not-found", "Investment bucket not found");
     }
 
-    const currentBalance = bucketDoc.data()?.balance || 0;
+    const currentBalance: number = bucketDoc.data()?.balance ?? 0;
     const newBalance = currentBalance * multiplier;
+
+    if (newBalance < currentBalance) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Multiplier must not decrease the investment balance"
+      );
+    }
+
+    const batch = db.batch();
 
     batch.update(investmentBucketRef, {
       balance: newBalance,
@@ -79,7 +129,7 @@ export const onMultiplyInvestment = functions.https.onCall(
       multiplier,
       previousBalance: currentBalance,
       newBalance,
-      performedBy: context.auth.uid,
+      performedBy: context.auth!.uid,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -95,38 +145,14 @@ export const onMultiplyInvestment = functions.https.onCall(
 
 export const onDonateCharity = functions.https.onCall(
   async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Must be authenticated"
-      );
-    }
-
-    const role = context.auth.token.role;
-    if (role !== "parent") {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "Only parents can donate charity"
-      );
-    }
+    assertParentAuth(context);
 
     const {familyId, childId} = data;
 
-    if (!familyId || !childId) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Missing required fields"
-      );
-    }
+    assertNonEmptyString(familyId, "familyId");
+    assertNonEmptyString(childId, "childId");
 
-    if (context.auth.token.familyId !== familyId) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "Family ID mismatch"
-      );
-    }
-
-    const batch = db.batch();
+    await assertFamilyMembership(context.auth!.uid, familyId);
 
     const charityBucketRef = db
       .collection("families")
@@ -138,10 +164,19 @@ export const onDonateCharity = functions.https.onCall(
 
     const bucketDoc = await charityBucketRef.get();
     if (!bucketDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Bucket not found");
+      throw new functions.https.HttpsError("not-found", "Charity bucket not found");
     }
 
-    const previousBalance = bucketDoc.data()?.balance || 0;
+    const previousBalance: number = bucketDoc.data()?.balance ?? 0;
+
+    if (previousBalance <= 0) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Charity bucket is already empty"
+      );
+    }
+
+    const batch = db.batch();
 
     batch.update(charityBucketRef, {
       balance: 0,
@@ -159,7 +194,7 @@ export const onDonateCharity = functions.https.onCall(
       childId,
       previousBalance,
       newBalance: 0,
-      performedBy: context.auth.uid,
+      performedBy: context.auth!.uid,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -174,45 +209,27 @@ export const onDonateCharity = functions.https.onCall(
 );
 
 export const onSetMoney = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be authenticated"
-    );
-  }
-
-  const role = context.auth.token.role;
-  if (role !== "parent") {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Only parents can set money"
-    );
-  }
+  assertParentAuth(context);
 
   const {familyId, childId, amount} = data;
 
-  if (!familyId || !childId || amount === undefined) {
+  assertNonEmptyString(familyId, "familyId");
+  assertNonEmptyString(childId, "childId");
+
+  if (
+    amount === undefined ||
+    amount === null ||
+    typeof amount !== "number" ||
+    !isFinite(amount) ||
+    amount < 0
+  ) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Missing required fields"
+      "amount must be a finite number >= 0"
     );
   }
 
-  if (amount < 0) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Amount must be >= 0"
-    );
-  }
-
-  if (context.auth.token.familyId !== familyId) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Family ID mismatch"
-    );
-  }
-
-  const batch = db.batch();
+  await assertFamilyMembership(context.auth!.uid, familyId);
 
   const moneyBucketRef = db
     .collection("families")
@@ -223,9 +240,11 @@ export const onSetMoney = functions.https.onCall(async (data, context) => {
     .doc("money");
 
   const bucketDoc = await moneyBucketRef.get();
-  const previousBalance = bucketDoc.exists ?
-    bucketDoc.data()?.balance || 0 :
+  const previousBalance: number = bucketDoc.exists ?
+    bucketDoc.data()?.balance ?? 0 :
     0;
+
+  const batch = db.batch();
 
   batch.set(
     moneyBucketRef,
@@ -247,7 +266,7 @@ export const onSetMoney = functions.https.onCall(async (data, context) => {
     childId,
     previousBalance,
     newBalance: amount,
-    performedBy: context.auth.uid,
+    performedBy: context.auth!.uid,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -275,6 +294,17 @@ export const onSetCustomClaims = functions.firestore
     const familyId = userData?.familyId;
     const childId = userData?.childId;
 
+    // Only the 'parent' role is valid for Firebase Auth accounts.
+    // Children authenticate locally via PIN and do not have Firebase Auth accounts.
+    const validRoles = ["parent"];
+    if (role && !validRoles.includes(role)) {
+      functions.logger.warn(
+        `onSetCustomClaims: rejected invalid role '${role}' for user ${userId}`
+      );
+      await admin.auth().setCustomUserClaims(userId, {});
+      return;
+    }
+
     const claims: {
       role?: string;
       familyId?: string;
@@ -282,10 +312,9 @@ export const onSetCustomClaims = functions.firestore
     } = {};
 
     if (role) claims.role = role;
-    if (familyId) claims.familyId = familyId;
-    if (childId) claims.childId = childId;
+    if (familyId && typeof familyId === "string") claims.familyId = familyId;
+    if (childId && typeof childId === "string") claims.childId = childId;
 
     await admin.auth().setCustomUserClaims(userId, claims);
-
-    return;
   });
+

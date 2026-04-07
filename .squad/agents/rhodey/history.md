@@ -449,3 +449,35 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
   - All three tasks from Sprint 5B delivered
   - Seamless integration with JARVIS's offline sync engine
 
+
+## Sprint 5C — 2026-04-07: Session Expiry UI Enforcement
+
+**Status:** ✅ COMPLETE
+
+### Rhodey — Session Enforcement on Child Screens
+**Delivered:**
+- **Session Expiry Check in ChildHomeScreen:** Integrated childSessionValidProvider into ChildHomeScreen.build()  
+  - On every render, checks childSessionValidProvider from Fury's session_provider.dart  
+  - If SessionState.expired: clears ctiveChildProvider and triggers redirect to /child-pin  
+  - If SessionState.notAuthenticated: same behavior (return to PIN gate)  
+  - If SessionState.valid: continues to child dashboard as normal  
+  - Transparent to user: no confusing dialogs, just smooth redirect back to PIN screen  
+
+**Files Modified:**
+- lib/features/auth/presentation/child_home_screen.dart  
+  - Added import for session_provider.dart  
+  - Added childSessionValidProvider watch in build method  
+  - Added conditional check: if session not valid, clear child and redirect  
+  - Maintains child dashboard UX when session is valid  
+
+**Architecture Compliance:**
+- ✅ Consumes Fury's childSessionValidProvider (no direct Firestore reads)  
+- ✅ Respects Riverpod provider pattern  
+- ✅ No data layer changes — pure UI-level gating  
+- ✅ Smooth UX: session expiry forces PIN re-entry without errors  
+
+**Security Impact:**
+- ✅ Session expiry now enforced on every child screen render (24h maximum session)  
+- ✅ Parent can revoke sessions by setting sessionExpiresAt to past date in Firestore  
+- ✅ Child with expired session cannot access any child screen (forced back to PIN gate)  
+

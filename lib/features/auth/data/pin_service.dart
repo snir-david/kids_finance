@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'pin_attempt_tracker.dart';
+
+export 'pin_attempt_tracker.dart' show PinLockoutException;
 
 sealed class PinResult {
   const PinResult();
@@ -22,12 +25,15 @@ class PinLocked extends PinResult {
 }
 
 class PinService {
+  PinService({PinAttemptTracker? tracker})
+      : _tracker = tracker ?? PinAttemptTracker();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final PinAttemptTracker _tracker;
 
-  static const int maxAttempts = 5;
-  static const Duration lockoutDuration = Duration(minutes: 15);
-  static const Duration sessionDuration = Duration(days: 30);
+  /// Child sessions expire after 24 hours, requiring PIN re-entry.
+  static const Duration sessionDuration = Duration(hours: 24);
 
   String hashPin(String pin) {
     return BCrypt.hashpw(pin, BCrypt.gensalt());
@@ -66,7 +72,7 @@ class PinService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    await _resetAttempts(childId);
+    await _tracker.resetAttempts(childId);
   }
 
   Future<PinResult> verifyChildPin(
@@ -74,9 +80,10 @@ class PinService {
     String familyId,
     String enteredPin,
   ) async {
-    final lockStatus = await _checkLockout(childId);
-    if (lockStatus != null) {
-      return lockStatus;
+    // Check lockout first — state persists across app restarts.
+    final remaining = await _tracker.lockoutRemaining(childId);
+    if (remaining != null) {
+      return PinLocked(DateTime.now().add(remaining));
     }
 
     final childDoc = await _firestore
@@ -96,11 +103,16 @@ class PinService {
     }
 
     if (verifyPin(enteredPin, storedHash)) {
-      await _resetAttempts(childId);
-      await _createSession(childId);
+      await _tracker.resetAttempts(childId);
+      await _createSession(childId, familyId);
       return PinSuccess(childId);
     } else {
-      return await _incrementAttempts(childId);
+      try {
+        final attemptsRemaining = await _tracker.recordFailure(childId);
+        return PinWrongPin(attemptsRemaining);
+      } on PinLockoutException catch (e) {
+        return PinLocked(e.lockedUntil);
+      }
     }
   }
 
@@ -118,59 +130,24 @@ class PinService {
 
   Future<void> clearChildSession(String childId) async {
     await _storage.delete(key: 'child_session_$childId');
-    await _resetAttempts(childId);
+    await _tracker.resetAttempts(childId);
   }
 
-  Future<void> _createSession(String childId) async {
+  /// Creates a 24-hour session both locally (fast read) and in Firestore
+  /// (enforced by [childSessionValidProvider] on every child-mode screen).
+  Future<void> _createSession(String childId, String familyId) async {
     final expiry = DateTime.now().add(sessionDuration);
+
     await _storage.write(
       key: 'child_session_$childId',
       value: expiry.toIso8601String(),
     );
-  }
 
-  Future<PinLocked?> _checkLockout(String childId) async {
-    final lockoutStr = await _storage.read(key: 'lockout_until_$childId');
-    if (lockoutStr == null) return null;
-
-    try {
-      final lockoutUntil = DateTime.parse(lockoutStr);
-      if (DateTime.now().isBefore(lockoutUntil)) {
-        return PinLocked(lockoutUntil);
-      } else {
-        await _storage.delete(key: 'lockout_until_$childId');
-        await _resetAttempts(childId);
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<PinResult> _incrementAttempts(String childId) async {
-    final attemptsStr = await _storage.read(key: 'pin_attempts_$childId');
-    final attempts = int.tryParse(attemptsStr ?? '0') ?? 0;
-    final newAttempts = attempts + 1;
-
-    if (newAttempts >= maxAttempts) {
-      final lockoutUntil = DateTime.now().add(lockoutDuration);
-      await _storage.write(
-        key: 'lockout_until_$childId',
-        value: lockoutUntil.toIso8601String(),
-      );
-      await _storage.delete(key: 'pin_attempts_$childId');
-      return PinLocked(lockoutUntil);
-    } else {
-      await _storage.write(
-        key: 'pin_attempts_$childId',
-        value: newAttempts.toString(),
-      );
-      return PinWrongPin(maxAttempts - newAttempts);
-    }
-  }
-
-  Future<void> _resetAttempts(String childId) async {
-    await _storage.delete(key: 'pin_attempts_$childId');
-    await _storage.delete(key: 'lockout_until_$childId');
+    await _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId)
+        .update({'sessionExpiresAt': Timestamp.fromDate(expiry)});
   }
 }

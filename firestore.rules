@@ -9,11 +9,37 @@ service cloud.firestore {
     }
 
     // Check if the authenticated user is listed as a parent in the family doc.
-    // This replaces custom-claim checks so the app works without Cloud Functions.
+    // Using parentIds array in Firestore (not JWT claims) so family membership
+    // can never be spoofed by manipulating the user's own userProfile document.
     function isParentOfFamily(familyId) {
       return isAuthenticated() &&
              request.auth.uid in
                get(/databases/$(database)/documents/families/$(familyId)).data.parentIds;
+    }
+
+    // Validates a bucket document on creation.
+    // Enforces required fields and non-negative balance.
+    function validBucketCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['balance', 'childId', 'familyId', 'type', 'lastUpdatedAt'])
+          && d.balance >= 0
+          && d.childId is string && d.childId.size() > 0
+          && d.familyId is string && d.familyId.size() > 0
+          && d.type is string && d.type.size() > 0;
+    }
+
+    // Bucket updates must never produce a negative balance.
+    function validBucketUpdate() {
+      return request.resource.data.balance >= 0;
+    }
+
+    // Validates a child document on creation.
+    function validChildCreate() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['displayName', 'avatarEmoji', 'pinHash', 'familyId', 'createdAt'])
+          && d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 50
+          && d.familyId is string && d.familyId.size() > 0
+          && d.pinHash is string && d.pinHash.size() > 0;
     }
 
     // ── User Profiles ─────────────────────────────────────────────────────────
@@ -35,15 +61,26 @@ service cloud.firestore {
                        request.auth.uid in request.resource.data.parentIds;
 
       // ── Children ────────────────────────────────────────────────────────────
+      // Only parents can read or write child documents.
+      // Hard-delete is prohibited — use archived: true (soft-delete).
 
       match /children/{childId} {
-        allow read, write: if isParentOfFamily(familyId);
+        allow read: if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId) && validChildCreate();
+        allow update: if isParentOfFamily(familyId);
+        allow delete: if false;
       }
 
       // ── Buckets ─────────────────────────────────────────────────────────────
+      // Only parents can read or modify bucket documents.
+      // Balances are validated to be non-negative on every write.
+      // Hard-delete is prohibited.
 
       match /children/{childId}/buckets/{bucketType} {
-        allow read, write: if isParentOfFamily(familyId);
+        allow read: if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId) && validBucketCreate();
+        allow update: if isParentOfFamily(familyId) && validBucketUpdate();
+        allow delete: if false;
       }
 
       // ── Transactions (append-only log) ───────────────────────────────────────
@@ -55,7 +92,8 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // ── Misc event logs ──────────────────────────────────────────────────────
+      // ── Multiplier events (append-only log) ──────────────────────────────────
+      // Multiplier must be > 0 — rules enforce this even for direct API calls.
 
       match /multiplierEvents/{eventId} {
         allow read:   if isParentOfFamily(familyId);
