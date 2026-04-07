@@ -1,31 +1,42 @@
 ## Core Context
 
-## Project Seed
-
-**Project:** KidsFinance
-**Description:** Android app (Flutter + Firebase) for kids' financial literacy.
+### Phase 1–4 Summary
+**Project:** KidsFinance — Android app (Flutter + Firebase) for kids' financial literacy.
 - Three buckets per child: Money 💰, Investments 📈, Charity ❤️
-- Parents can multiply investments at will (stored as a transaction event)
-- Charity bucket resets to zero when child donates
-- Multi-child: each family has 1–N children
-- Multi-parent: 2+ parents can manage the same family
-- Money can be set freely by parents (any positive amount)
-- UI must be simple enough for kids to understand
-**Stack:** Flutter (Dart) + Firebase (Firestore, Auth, Cloud Functions)
-**Target:** Android (primary); Flutter enables future iOS expansion
-**Universe:** Iron Man (Marvel)
+- Multi-child, multi-parent families with role-based access
+- Parents manage all financial operations (set money, multiply investments, donations)
+- PIN-based child authentication (4-digit, bcrypt hashed)
+- **Stack:** Flutter (Dart) + Firebase (Firestore, Auth, Cloud Functions)
 
-## Team
-- Stark: Tech Lead
-- Rhodey: Mobile Dev
-- JARVIS: Backend Dev
-- Pepper: UI/UX Designer
-- Fury: Security & Auth
-- Happy: QA/Tester
-- Scribe: Session Logger
-- Ralph: Work Monitor
+**Phase 1–4 Delivery (2026-04-05 to 2026-04-07):**
+- ✅ Project scaffold (70+ files)
+- ✅ Data layer with repositories and Riverpod providers
+- ✅ Auth system (email/password, Google Sign-In, PIN for kids)
+- ✅ Parent dashboard with child selector and bucket actions
+- ✅ Child dashboard with simple bucket display and transactions
+- ✅ Celebration animations (coins, confetti, hearts)
+- ✅ Forgot password, zero-amount validation, unified bucket actions
+- ✅ Child picker screen, multi-child support
+- ✅ Offline sync with conflict resolution and TTL queue
+- ✅ Offline status banner and conflict dialogs
 
-## Learnings
+### Architecture Principles
+- **Feature-first** structure with clear Mobile Dev boundaries
+- **Repository pattern** for all data access (no direct Firebase calls in UI)
+- **Riverpod** for state management and reactive data streams
+- **Material 3** design system, dual themes (Nunito kids, Inter parents)
+- **Atomic transactions** for multi-step operations
+- **Soft-delete only** (archived: true, never hard-delete)
+- **Timestamp precision:** Always use Timestamp.fromDate() or FieldValue.serverTimestamp()
+
+### Key Learnings
+1. Code generation (build_runner, freezed, riverpod_generator) incompatible with Flutter 3.41.6 + Dart 3.11.4 analyzer 7.6.0 → use plain Dart models + manual providers
+2. Firestore Timestamp deserialization: Write with Timestamp.fromDate(), read with dual-type pattern to handle legacy string data
+3. Offline queue design: TTL 24h with warning at 23h, conflict detection scoped to bucket balances only, user prompt for resolution
+4. PIN system: 4-digit bcrypt hashed, 5-attempt → 15-min lockout (persisted), 24h session expiry
+5. Security: Multi-layer enforcement (rules + functions + providers) essential; JWT claims not trusted for family isolation
+
+## Learnings & Work History
 
 ### 2026-04-07: Sprint 5A Wave 1 — Animations, Forgot Password, Kids Screen Redesign
 
