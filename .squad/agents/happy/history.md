@@ -154,3 +154,25 @@ Regression check: 0 new failures (all pre-existing)
 - **Total tests written:** 110+ (60+ anticipatory Phases 1–5B + 54 integrated Sprint 5D)
 - **Zero regressions:** All new tests add value; no flaky tests introduced
 - **Code quality:** 100% of tests follow established patterns and conventions
+
+---
+
+## Learnings
+
+### Sprint 5D Documentation Update (test report consolidation)
+
+**Actual test counts verified via `flutter test test/ --no-pub`:**
+- 218 total unit tests (36 test files)
+- 189 passing
+- 29 failing (pre-existing `.mocks.dart` mock failures — build_runner/Flutter 3.41.6 incompatibility)
+- 54 integration tests across 6 files (40 runnable without emulator, 14 require `firebase emulators:start`)
+
+**Report decisions made:**
+- `TEST_REPORT.md` is now the single canonical report covering all phases (Phase 1 through Sprint 5D)
+- `TEST_REPORT_PHASE2.md` redirects to TEST_REPORT.md; original Phase 2 widget details are archived in place
+- Consolidation rationale: Phase 2 widget coverage is fully represented in the canonical report's sprint table and file inventory; keeping a separate living document would diverge over time
+
+**Key numbers to remember:**
+- `flutter test test/` → `+189 -29` (218 total, 29 mock failures expected)
+- `flutter test integration_test/` → 40 tests pass without emulator, 14 skipped
+- Total test investment: 218 unit + 54 integration = **272 tests** across the project
