@@ -393,7 +393,64 @@ dart run build_runner build --delete-conflicting-outputs
 
 ---
 
-**Decision Document Status:** ✅ MERGED & DEDUPLICATED  
+## F. Phase 5 Architecture — Open Questions Resolved (2026-04-07)
+
+### Active Decisions — Test Strategy & Implementation Planning
+
+**1. Multiply by Zero** ❌ RESOLVED
+- **Decision:** NOT ALLOWED — multiplication factor must be > 0
+- **Enforcement:** UI validation + Cloud Function validation + Firestore rules
+- **Rationale:** Prevents accidental catastrophic loss of investment buckets
+- **Status:** RESOLVED & LOCKED
+
+**2. Offline Conflict Resolution** 🤔 RESOLVED
+- **Decision:** USER PROMPT — when sync conflict detected, show UI dialog for user to choose winning version
+- **Alternative Considered:** Auto-merge with last-write-wins (REJECTED)
+- **Rationale:** Intentional reconciliation ensures data integrity
+- **Implementation:** Riverpod state manages pending changes, dialog appears on sync completion
+- **Status:** RESOLVED & LOCKED
+
+**3. Offline Queue Retention** ⏱️ RESOLVED
+- **Decision:** 24 HOURS — pending offline operations discarded after 24 hours
+- **Warning:** Show user alert before dropping stale operations
+- **Rationale:** Encourages regular sync; prevents unbounded queue growth
+- **Storage:** FlutterSecureStorage for pending operations with timestamp
+- **Status:** RESOLVED & LOCKED
+
+**4. Child Spending Limits** 👶 RESOLVED
+- **Decision:** FULL PARENT CONTROL — no child-initiated spending
+- **Enforcement:** All write operations from child blocked at Firestore rules level
+- **Approval Model:** All bucket deductions require explicit parent action
+- **Future Expansion:** Parent-set approval workflows (out of Phase 5 scope)
+- **Rationale:** Ensures complete parental oversight; COPPA compliant
+- **Status:** RESOLVED & LOCKED
+
+**5. Child Authentication** 🔐 RESOLVED
+- **Decision:** PIN ONLY — no biometric auth in Phase 5 scope
+- **Method:** 4–6 digit PIN remains sole child login mechanism
+- **Rationale:** Simplifies security model; appropriate for target age group
+- **Future:** Biometric support deferred to post-launch expansion
+- **Status:** RESOLVED & LOCKED
+
+---
+
+## G. Phase 5 Planning Session
+
+**Date:** 2026-04-07  
+**Trigger:** All 5 architecture open questions now locked by user directive  
+**Planning Agent:** Stark (Tech Lead) spawned for sprint roadmap
+
+**Expected Outputs:**
+- Detailed task breakdown by feature area
+- Dependency graph for parallel work
+- Team assignments (Rhodey, Fury, JARVIS, Happy)
+- Timeline and milestones
+- Risk assessment
+- Updated test strategy
+
+---
+
+**Decision Document Status:** ✅ MERGED & ACTIVE DECISIONS UPDATED
 **Prepared by:** Scribe  
-**Date:** 2026-04-05  
-**Approval:** Pending team review
+**Date:** 2026-04-07  
+**Approval:** Architecture decisions locked; Phase 5 planning in progress
