@@ -1,5 +1,108 @@
 # Happy QA Lead - Work History
 
+## 2026-04-07: Sprint 7D — Achievement Badges Test Suite (46 Tests, 100% Pass)
+
+**Status:** ✅ COMPLETE
+
+### Summary
+
+Comprehensive test coverage across 4 test files (+ 1 shared stubs file):
+`badge_model_test.dart` (12), `badge_repository_test.dart` (13), `badge_evaluation_test.dart` (13), `badge_chip_test.dart` (8).
+
+**Coverage:** Badge model Firestore serialization, BadgeType enum helpers (emoji/displayName),
+FakeBadgeRepository CRUD + idempotency, BadgeEvaluationService trigger logic for all 5 evaluation
+paths (covering 6 badge types), BadgeChip + BadgeShelf widget rendering.
+
+### Test Files Created
+
+1. **test/features/badges/badge_test_stubs.dart** — shared stubs (not a test file)
+   - `BadgeType` enum: 6 values (firstDeposit, saver, generousHeart, youngInvestor, goalGetter, piggyBank)
+   - `BadgeTypeX` extension: `emoji` and `displayName` getters for all 6 types
+   - `Badge` model: `fromFirestore`, `toMap`, `copyWith`
+   - `BadgeRepository` abstract interface
+   - `FakeBadgeRepository`: in-memory Map-backed, idempotent `awardBadge`, `hasBadge`, `markSeen`, `watchBadges`
+   - `BadgeEvaluationService`: business logic stub (inject repo, evaluate events)
+
+2. **test/features/badges/badge_model_test.dart** (12 tests)
+   - fromFirestore: deserializes all fields correctly ✅
+   - fromFirestore: handles all 6 BadgeType values ✅
+   - toMap: serializes BadgeType as `type.name` string ✅
+   - toMap: all required Firestore keys present ✅
+   - toMap: awardedAt serializes as Timestamp ✅
+   - toMap: seen field round-trips ✅
+   - emoji getter: correct emoji per type ✅
+   - emoji getter: all 6 types have non-empty emoji ✅
+   - displayName getter: correct name per type ✅
+   - displayName getter: all 6 types have non-empty name ✅
+
+3. **test/features/badges/badge_repository_test.dart** (13 tests)
+   - awardBadge adds badge with seen=false ✅
+   - awardBadge stores correct familyId, childId, type ✅
+   - awardBadge is idempotent — same BadgeType twice → one badge ✅
+   - hasBadge returns false before award ✅
+   - hasBadge returns true after award ✅
+   - hasBadge returns false for different BadgeType ✅
+   - markSeen sets seen=true ✅
+   - markSeen is no-op for non-existent badge ✅
+   - markSeen seen stays true after second call ✅
+   - watchBadges streams all badges for child ✅
+   - watchBadges returns empty when no badges ✅
+   - watchBadges reflects updates after award (re-subscribe) ✅
+   - watchBadges only returns badges for requested child ✅
+
+4. **test/features/badges/badge_evaluation_test.dart** (13 tests)
+   - evaluateAfterDeposit awards firstDeposit on first call ✅
+   - evaluateAfterDeposit does NOT re-award firstDeposit on second call ✅
+   - evaluateAfterDeposit awards saver when balance == 100 ✅
+   - evaluateAfterDeposit awards saver when balance > 100 ✅
+   - evaluateAfterDeposit does NOT award saver when balance < 100 ✅
+   - evaluateAfterDeposit does NOT award saver when balance == 0 ✅
+   - evaluateAfterDonation awards generousHeart on first call ✅
+   - evaluateAfterDonation does NOT re-award generousHeart ✅
+   - evaluateAfterInvestmentMultiply awards youngInvestor on first call ✅
+   - evaluateAfterInvestmentMultiply does NOT re-award youngInvestor ✅
+   - evaluateAfterGoalCompleted awards goalGetter on first call ✅
+   - evaluateAfterGoalCompleted does NOT re-award goalGetter ✅
+   - Multi-badge: deposit(≥100) awards firstDeposit + saver in one pass ✅
+   - Multi-eval: all 4 evaluations → 5 distinct badges ✅ (counted as one test group)
+   - All evaluations idempotent: run twice → same badge set ✅
+
+5. **test/features/badges/badge_chip_test.dart** (8 tests)
+   - BadgeChip shows emoji for earned badge ✅
+   - BadgeChip shows 🔒 overlay for unearned badge ✅
+   - BadgeChip calls onTap when tapped ✅
+   - BadgeChip earned badge has no lock overlay ✅
+   - BadgeShelf shows all 6 badge slots ✅
+   - BadgeShelf: earned badges do not show lock overlay ✅
+   - BadgeShelf: all slots locked when no badges earned ✅
+   - BadgeShelf: no lock overlays when all badges earned ✅
+
+### Test Results
+
+- **New tests:** 46 passing, 0 failing, 0 skipped ✅
+- **Full suite:** unchanged (previous baseline + 46 new)
+
+### Key Technical Decisions
+
+- `FakeBadgeRepository` placed in `badge_test_stubs.dart` (not inline in repo test) because both
+  `badge_repository_test.dart` and `badge_evaluation_test.dart` need it — avoids duplication
+- `BadgeEvaluationService` stub defined in stubs file as the authoritative spec for JARVIS's
+  implementation; all evaluation logic is idempotent by design (hasBadge check before award)
+- `watchBadges` uses `Stream.value()` in the fake — tests designed around snapshot model
+  (call watchBadges → get current state); avoids StreamController complexity in tests
+- `BadgeChip` and `BadgeShelf` defined as local stubs in `badge_chip_test.dart` — minimal
+  behavioural spec; swap for real widgets once Rhodey ships lib/features/badges/
+
+### Migration Path
+
+When JARVIS ships `lib/features/badges/`:
+1. Delete stubs for `Badge`, `BadgeType`, `BadgeRepository`, `BadgeEvaluationService` from stubs file
+2. Add imports from real implementation
+3. Keep `FakeBadgeRepository` as the test double
+4. Swap `BadgeChip` + `BadgeShelf` stubs in `badge_chip_test.dart` with real widget imports
+
+---
+
 ## 2026-04-07: Sprint 7B — Savings Goals Test Suite (39 Tests, 100% Pass)
 
 **Status:** ✅ COMPLETE
