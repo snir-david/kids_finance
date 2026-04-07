@@ -2,12 +2,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
+import '../../../core/offline/connectivity_service.dart';
+import '../../../core/offline/offline_queue.dart';
+import '../../../core/offline/pending_operation.dart';
 
 class FirebaseBucketRepository implements BucketRepository {
   final FirebaseFirestore _firestore;
+  final ConnectivityService _connectivity;
+  final OfflineQueue _queue;
 
-  FirebaseBucketRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseBucketRepository({
+    FirebaseFirestore? firestore,
+    required ConnectivityService connectivity,
+    required OfflineQueue queue,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _connectivity = connectivity,
+        _queue = queue;
 
   @override
   Stream<List<Bucket>> getBucketsStream({
@@ -38,9 +48,28 @@ class FirebaseBucketRepository implements BucketRepository {
     required double newBalance,
     required String performedByUid,
     String? note,
+    double? baseValue,
   }) async {
     if (newBalance < 0) {
       throw ArgumentError('Balance cannot be negative');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'setMoney',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'newBalance': newBalance,
+          'performedByUid': performedByUid,
+          'note': note,
+          if (baseValue != null) 'baseValue': baseValue,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
     }
 
     final bucketRef = _firestore
@@ -95,9 +124,28 @@ class FirebaseBucketRepository implements BucketRepository {
     required double multiplier,
     required String performedByUid,
     String? note,
+    double? baseValue,
   }) async {
     if (multiplier <= 0) {
       throw ArgumentError('Investment multiplier must be greater than 0');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'multiply',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'multiplier': multiplier,
+          'performedByUid': performedByUid,
+          'note': note,
+          if (baseValue != null) 'baseValue': baseValue,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
     }
 
     final bucketRef = _firestore
@@ -153,7 +201,25 @@ class FirebaseBucketRepository implements BucketRepository {
     required String familyId,
     required String performedByUid,
     String? note,
+    double? baseValue,
   }) async {
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'donate',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'performedByUid': performedByUid,
+          'note': note,
+          if (baseValue != null) 'baseValue': baseValue,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
+    }
+
     final bucketRef = _firestore
         .collection('families')
         .doc(familyId)
@@ -206,9 +272,27 @@ class FirebaseBucketRepository implements BucketRepository {
     required double amount,
     required String performedByUid,
     String? note,
+    double? baseValue,
   }) async {
     if (amount <= 0) {
       throw ArgumentError('Amount must be positive');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'addMoney',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'amount': amount,
+          'performedByUid': performedByUid,
+          'note': note,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
     }
 
     final bucketRef = _firestore
@@ -264,9 +348,27 @@ class FirebaseBucketRepository implements BucketRepository {
     required double amount,
     required String performedByUid,
     String? note,
+    double? baseValue,
   }) async {
     if (amount <= 0) {
       throw ArgumentError('Amount must be positive');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'removeMoney',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'amount': amount,
+          'performedByUid': performedByUid,
+          'note': note,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
     }
 
     final bucketRef = _firestore
@@ -328,12 +430,37 @@ class FirebaseBucketRepository implements BucketRepository {
     required double charityAmount,
     required String performedByUid,
     String? note,
+    double? baseValueMoney,
+    double? baseValueInvestment,
+    double? baseValueCharity,
   }) async {
     if (moneyAmount < 0 || investmentAmount < 0 || charityAmount < 0) {
       throw ArgumentError('All amounts must be >= 0');
     }
     if (moneyAmount + investmentAmount + charityAmount <= 0) {
       throw ArgumentError('Total distributed amount must be greater than 0');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'distribute',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'moneyAmount': moneyAmount,
+          'investmentAmount': investmentAmount,
+          'charityAmount': charityAmount,
+          'performedByUid': performedByUid,
+          'note': note,
+          if (baseValueMoney != null) 'baseValueMoney': baseValueMoney,
+          if (baseValueInvestment != null) 'baseValueInvestment': baseValueInvestment,
+          if (baseValueCharity != null) 'baseValueCharity': baseValueCharity,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
     }
 
     final childPath = _firestore

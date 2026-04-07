@@ -4,10 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/child.dart';
 import '../domain/child_repository.dart';
 import '../data/firebase_child_repository.dart';
+import '../../../core/offline/connectivity_provider.dart';
+import '../../../core/offline/sync_providers.dart';
 
 /// Repository provider
 final childRepositoryProvider = Provider<ChildRepository>((ref) {
-  return FirebaseChildRepository(firestore: FirebaseFirestore.instance);
+  return FirebaseChildRepository(
+    connectivity: ref.watch(connectivityServiceProvider),
+    queue: ref.watch(offlineQueueProvider),
+  );
 });
 
 /// Stream provider for all children in a family (excludes archived children)

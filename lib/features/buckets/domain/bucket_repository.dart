@@ -15,6 +15,7 @@ abstract class BucketRepository {
     required double newBalance,
     required String performedByUid,
     String? note,
+    double? baseValue,
   });
 
   /// Multiply investment bucket by a multiplier
@@ -26,6 +27,7 @@ abstract class BucketRepository {
     required double multiplier,
     required String performedByUid,
     String? note,
+    double? baseValue,
   });
 
   /// Donate charity bucket (sets balance to 0)
@@ -35,6 +37,7 @@ abstract class BucketRepository {
     required String familyId,
     required String performedByUid,
     String? note,
+    double? baseValue,
   });
 
   /// Add money to money bucket
@@ -44,6 +47,7 @@ abstract class BucketRepository {
     required double amount,
     required String performedByUid,
     String? note,
+    double? baseValue,
   });
 
   /// Remove money from money bucket
@@ -53,6 +57,7 @@ abstract class BucketRepository {
     required double amount,
     required String performedByUid,
     String? note,
+    double? baseValue,
   });
 
   /// Distribute/split an allowance across all 3 buckets atomically.
@@ -66,5 +71,8 @@ abstract class BucketRepository {
     required double charityAmount,
     required String performedByUid,
     String? note,
+    double? baseValueMoney,
+    double? baseValueInvestment,
+    double? baseValueCharity,
   });
 }

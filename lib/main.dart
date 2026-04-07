@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'core/offline/hive_setup.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -13,6 +14,9 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Hive for offline queue
+  await initHive();
 
   // Run app wrapped in ProviderScope for Riverpod
   runApp(

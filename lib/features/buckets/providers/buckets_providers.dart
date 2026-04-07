@@ -1,13 +1,17 @@
 /// Riverpod providers for bucket-related functionality.
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/bucket.dart';
 import '../domain/bucket_repository.dart';
 import '../data/firebase_bucket_repository.dart';
+import '../../../core/offline/connectivity_provider.dart';
+import '../../../core/offline/sync_providers.dart';
 
 /// Repository provider
 final bucketRepositoryProvider = Provider<BucketRepository>((ref) {
-  return FirebaseBucketRepository(firestore: FirebaseFirestore.instance);
+  return FirebaseBucketRepository(
+    connectivity: ref.watch(connectivityServiceProvider),
+    queue: ref.watch(offlineQueueProvider),
+  );
 });
 
 /// Stream provider for all buckets of a specific child

@@ -118,42 +118,39 @@ Sets `archived: true` on Firestore child document. No data deleted.
 
 **Rule:** Never use `.toIso8601String()` for Firestore timestamp fields. Always use `Timestamp.fromDate(dt)` or `FieldValue.serverTimestamp()`.
 
-## Sprint 5A — 2026-04-07: distributeFunds, updateChild, archiveChild
+## Sprint 5B — 2026-04-07: Offline Sync Queue
 
-### Files changed
+**Status:** ✅ COMPLETE
 
-1. **`lib/features/transactions/domain/transaction.dart`**  
-   Added `distributed` to `TransactionType` enum.
+### Decisions Locked
+- Offline queue TTL: 24 hours (purge on next sync)
+- Conflict resolution: USER PROMPT for bucket balance writes only
+- Conflict scope: BUCKET BALANCES ONLY (`amount`/`balance` field on bucket docs)
+- Operation types with conflict detection: setMoney, distribute, multiply, donate
+- Operation types last-write-wins: addMoney, removeMoney, updateChild, archiveChild
+- Child auth: PIN only
+- Hive TypeAdapters written manually (no build_runner — incompatible with Flutter 3.41.6 + Riverpod 3)
+- Riverpod 3.x: `Notifier` + `NotifierProvider` instead of `StateNotifier`/`StateProvider`
+- `hive_generator` + `build_runner` removed from dev_dependencies (conflict with mockito + flutter_riverpod 3.x)
 
-2. **`lib/features/buckets/domain/bucket_repository.dart`**  
-   Added `distributeFunds(...)` abstract method.
+### Files Created
+- `lib/core/offline/pending_operation.dart` — HiveObject + manual TypeAdapter (typeId: 0)
+- `lib/core/offline/hive_setup.dart` — `initHive()` called in main()
+- `lib/core/offline/offline_queue.dart` — enqueue/dequeue/purge with 24h TTL
+- `lib/core/offline/connectivity_service.dart` — wraps connectivity_plus 6.x (List<ConnectivityResult>)
+- `lib/core/offline/connectivity_provider.dart` — `connectivityServiceProvider`, `connectivityProvider`, `isOnlineProvider`
+- `lib/core/offline/conflict.dart` — `BucketConflict`, `ConflictResolution` enum
+- `lib/core/offline/sync_engine.dart` — processes queue, detects conflicts, resolves via repo calls
+- `lib/core/offline/sync_providers.dart` — `offlineQueueProvider`, `syncEngineProvider`, `pendingOperationsProvider`, `pendingConflictsProvider`, `autoSyncProvider`
 
-3. **`lib/features/buckets/data/firebase_bucket_repository.dart`**  
-   Implemented `distributeFunds` using `runTransaction` (reads all 3 bucket balances, then writes 3 balance updates + 3 transaction log entries atomically).
+### Files Modified
+- `pubspec.yaml` — added connectivity_plus ^6.0.0, hive ^2.2.3, hive_flutter ^1.1.0
+- `lib/main.dart` — added `await initHive()` before `runApp`
+- `lib/features/buckets/domain/bucket_repository.dart` — added optional `baseValue` params to all write methods; `distributeFunds` gets `baseValueMoney/Investment/Charity`
+- `lib/features/buckets/data/firebase_bucket_repository.dart` — offline-aware: checks connectivity, enqueues ops when offline
+- `lib/features/buckets/providers/buckets_providers.dart` — injects ConnectivityService + OfflineQueue
+- `lib/features/children/data/firebase_child_repository.dart` — offline-aware: updateChild + archiveChild queue when offline; PIN hashed before storing in queue
+- `lib/features/children/providers/children_providers.dart` — injects ConnectivityService + OfflineQueue
 
-4. **`lib/features/children/domain/child.dart`**  
-   Added `archived` field (`bool`, defaults to `false`) with `fromJson`/`toJson`/`copyWith`/`props` support.
-
-5. **`lib/features/children/domain/child_repository.dart`**  
-   - Updated `updateChild` signature: `displayName` → `name`, added `newPin` param.  
-   - Added `archiveChild(familyId, childId)` abstract method.
-
-6. **`lib/features/children/data/firebase_child_repository.dart`**  
-   - Updated `updateChild`: maps `name` → Firestore `displayName`, hashes `newPin` via `BCrypt.hashpw`.  
-   - Implemented `archiveChild`: sets `archived: true`.
-
-7. **`lib/features/auth/presentation/child_home_screen.dart`**  
-   Added `distributed` case to `_transactionDescription` switch.
-
-8. **`lib/features/transactions/presentation/transaction_history_screen.dart`**  
-   Added `distributed` case to `_transactionInfo` switch.
-
-9. **`lib/features/children/providers/children_providers.dart`**  
-   `childrenProvider` now filters out archived children (`.where((c) => !c.archived)`).
-
-### Patterns confirmed
-- All Firestore writes use `Timestamp.fromDate(DateTime.now())`.
-- Multi-bucket atomic operations use `_firestore.runTransaction` (not batch) so previous balances can be read for the transaction log.
-- Soft delete = `archived: true` field; hard deletes are never used.
-
+**Code Quality:** flutter analyze = **0 errors** ✅
 

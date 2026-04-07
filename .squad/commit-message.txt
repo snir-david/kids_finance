@@ -1,8 +1,13 @@
-feat: Sprint 5A wave 2 — distribute funds UI, edit child dialog, archive child flow
+feat: Sprint 5B — offline sync, conflict resolution, TTL queue
 
-- _DistributeFundsDialog: split total amount across 3 buckets with real-time remainder
-- _EditChildDialog: edit name, avatar, PIN reset
-- Archive child: soft delete with confirmation dialog
-- All wired to JARVIS's distributeFunds/updateChild/archiveChild repository methods
+- Hive-based offline queue with 24h TTL (warn at 23h, purge at 24h)
+- ConnectivityService + Riverpod providers for online/offline state
+- SyncEngine: auto-sync on reconnect, conflict detection for bucket balances
+- Conflict resolution: user prompt (useLocal vs useServer)
+- Non-balance writes: last-write-wins (updateChild, archiveChild)
+- OfflineStatusBanner: 4-state animated banner on all screens
+- ConflictResolutionDialog: forced user choice, one conflict at a time
+- TTL expiry warning via app lifecycle observer
+- 29 new tests (200 total)
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

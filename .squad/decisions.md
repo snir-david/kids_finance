@@ -520,9 +520,132 @@
 
 ---
 
+## Sprint 5B Decisions (2026-04-07)
+
+### JARVIS Sprint 5B Offline Sync Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** JARVIS (Backend Dev)
+
+**Deliverables:**
+1. **Offline Queue (Hive-based)**
+   - 24-hour TTL with automatic purge
+   - Warning at 23-hour mark
+   - Sorted by createdAt ascending
+   - PIN hashing (BCrypt) at enqueue (never plaintext)
+
+2. **ConnectivityService + Riverpod Providers**
+   - Real-time online/offline status via connectivity_plus
+   - Optimistic online assumption
+   - isOnlineProvider + isOnlineStream for reactive UI
+
+3. **SyncEngine with Conflict Detection**
+   - Bucket balance conflict scope (setMoney, distribute, multiply, donate)
+   - baseValue snapshot stored at enqueue for comparison
+   - Non-balance ops: last-write-wins (updateChild, archiveChild)
+   - User prompt resolution (useLocal vs useServer)
+
+4. **Repository Integration**
+   - BucketRepository: all write methods offline-aware
+   - ChildRepository: updateChild, archiveChild offline-aware
+   - Seamless enqueue when offline, direct write when online
+
+**Key Points:**
+- Riverpod 3 (no code generation, manual Notifier + NotifierProvider)
+- No build_runner / freezed dependencies (maintains Flutter 3.41.6 compatibility)
+- flutter analyze: 0 errors
+- 15 files modified/created
+
+**Architecture Compliance:**
+- ✅ Feature-first pattern maintained
+- ✅ Repository pattern extended to offline layer
+- ✅ Security: PIN never in plaintext, baseValue forensics
+- ✅ No breaking changes to existing APIs
+
+---
+
+### Happy Sprint 5B Test Suite Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** Happy (QA Lead)
+
+**Deliverables:**
+- 29 anticipatory tests across 6 files
+- Comprehensive edge case coverage (23h59m TTL boundary)
+- Conflict detection + resolution scenarios
+- Offline repository behavior (online regression tests)
+- UI component interaction tests
+
+**Test Files:**
+1. test/core/offline/offline_queue_test.dart (6 tests)
+2. test/core/offline/sync_engine_test.dart (7 tests)
+3. test/core/offline/connectivity_service_test.dart (4 tests)
+4. test/features/buckets/offline_bucket_repository_test.dart (4 tests)
+5. test/core/offline/conflict_resolution_dialog_test.dart (4 widget tests)
+6. test/core/offline/ttl_warning_test.dart (4 widget tests)
+
+**Key Insights:**
+- Tests serve as executable specification for JARVIS and Rhodey
+- All tests written with clear TODO comments and acceptance criteria
+- Follows established test patterns (ProviderScope, mockito)
+- Tests will activate automatically once implementation classes exist
+
+---
+
+### Rhodey Sprint 5B UI Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** Rhodey (Mobile Dev)
+
+**Deliverables:**
+
+1. **OfflineStatusBanner (145 lines)**
+   - 4-state animated banner:
+     - Online + no pending: Hidden (0px height)
+     - Offline: Amber "You're offline — changes will sync when you reconnect (X pending)"
+     - Offline + expiring: Red "⚠ Some changes expire in less than 1 hour (X expiring)"
+     - Just came online + syncing: Green "✓ Syncing X changes..." (auto-dismiss 3s)
+   - Smooth transitions (300ms ease-in-out)
+   - Integrated into parent_home_screen.dart and child_home_screen.dart
+
+2. **ConflictResolutionDialog (103 lines)**
+   - Shows local vs server values side-by-side
+   - "Keep my change" button (useLocal) writes to Firestore
+   - "Use current value" button (useServer) discards local
+   - Cannot be dismissed (barrierDismissible: false)
+   - One conflict at a time (next shown automatically if multiple exist)
+   - Bucket type names: Money, Investment, Charity
+
+3. **TTL Expiry Warning**
+   - WidgetsBindingObserver for app lifecycle detection
+   - Triggered on AppLifecycleState.resumed
+   - One-time SnackBar per session: "⚠ You have offline changes that will be lost in less than 1 hour. Connect to sync."
+   - Orange background, 5-second duration
+   - Only shown if getExpiring() returns ops (23–24h old)
+
+**Integration Points:**
+- parent_home_screen.dart: OfflineStatusBanner + ConflictResolutionDialog + TTL observer
+- child_home_screen.dart: OfflineStatusBanner
+
+**Key Points:**
+- Material 3 design compliant
+- Proper null safety throughout
+- No direct Firebase/Hive calls (respects Mobile Dev boundary)
+- flutter analyze: 0 issues
+- All providers correctly injected via Riverpod
+
+**Design Decisions:**
+- Banner always-on for consistent UX visibility
+- Conflict dialog enforces choice (no auto-merge) to prevent silent data loss
+- TTL warning once per session to prevent notification fatigue
+- Smooth animations (300ms ease-in-out) feel polished
+- Color-coded states: Amber (offline) | Red (expiring) | Green (syncing)
+
+---
+
 ## Governance Notes
 
 - All meaningful changes require team consensus
 - Architectural decisions documented here for future reference
-- Phase 5A targets P0 gap completion (allowance, animations, edit/delete, validation, forgot password)
+- Sprint 5B offline sync complete (Phase 5C: security polish next)
 - Code quality standard: flutter analyze 0 errors/warnings before commit

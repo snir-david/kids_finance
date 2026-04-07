@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/offline/sync_providers.dart';
+import '../../../core/offline/widgets/conflict_resolution_dialog.dart';
+import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
 import '../../buckets/presentation/widgets/celebration_overlay.dart';
@@ -53,7 +56,44 @@ class ParentHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<ParentHomeScreen> createState() => _ParentHomeScreenState();
 }
 
-class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
+class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with WidgetsBindingObserver {
+  bool _hasShownExpiryWarning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Set up conflict dialog listener
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showConflictDialogIfNeeded(context, ref);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_hasShownExpiryWarning) {
+      final expiringOps = ref.read(offlineQueueProvider).getExpiring();
+      if (expiringOps.isNotEmpty && mounted) {
+        _hasShownExpiryWarning = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '⚠ You have offline changes that will be lost in less than 1 hour. Connect to sync.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final familyIdAsync = ref.watch(currentFamilyIdProvider);
@@ -206,6 +246,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
 
     return Column(
       children: [
+        const OfflineStatusBanner(),
         _buildChildSelector(context, familyId, children, selectedChildId),
         const Divider(height: 1),
         Expanded(

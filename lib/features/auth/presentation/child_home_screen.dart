@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
 import '../../buckets/providers/buckets_providers.dart';
@@ -132,110 +133,117 @@ class ChildHomeScreen extends ConsumerWidget {
 
         final total = moneyBucket.balance + investmentBucket.balance + charityBucket.balance;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Total wealth card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withValues(alpha: 0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+        return Column(
+          children: [
+            const OfflineStatusBanner(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Total Money',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    // Total wealth card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Total Money',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '\$${total.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
+
+                    const SizedBox(height: 24),
+
+                    // Big Money bucket card
+                    _buildKidBucketCard(
+                      context,
+                      emoji: '💰',
+                      name: 'Money',
+                      balance: moneyBucket.balance,
+                      color: AppTheme.moneyColor,
+                      isLarge: true,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Investment and Charity side by side
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildKidBucketCard(
+                            context,
+                            emoji: '📈',
+                            name: 'Savings',
+                            balance: investmentBucket.balance,
+                            color: AppTheme.investmentsColor,
+                            isLarge: false,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildKidBucketCard(
+                            context,
+                            emoji: '❤️',
+                            name: 'Charity',
+                            balance: charityBucket.balance,
+                            color: AppTheme.charityColor,
+                            isLarge: false,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Recent transactions
+                    transactionsAsync.when(
+                      data: (transactions) => _buildRecentTransactions(
+                        context,
+                        transactions.take(3).toList(),
                       ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
                     ),
                   ],
                 ),
               ),
-              
-              const SizedBox(height: 24),
-              
-              // Big Money bucket card
-              _buildKidBucketCard(
-                context,
-                emoji: '💰',
-                name: 'Money',
-                balance: moneyBucket.balance,
-                color: AppTheme.moneyColor,
-                isLarge: true,
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Investment and Charity side by side
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildKidBucketCard(
-                      context,
-                      emoji: '📈',
-                      name: 'Savings',
-                      balance: investmentBucket.balance,
-                      color: AppTheme.investmentsColor,
-                      isLarge: false,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildKidBucketCard(
-                      context,
-                      emoji: '❤️',
-                      name: 'Charity',
-                      balance: charityBucket.balance,
-                      color: AppTheme.charityColor,
-                      isLarge: false,
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Recent transactions
-              transactionsAsync.when(
-                data: (transactions) => _buildRecentTransactions(
-                  context,
-                  transactions.take(3).toList(),
-                ),
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

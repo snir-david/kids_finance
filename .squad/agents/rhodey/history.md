@@ -380,3 +380,72 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
   - User-friendly confirmation dialogs and feedback messages
 
 
+### 2026-04-08: Sprint 5B — Offline Sync UI
+- **Status:** ✅ COMPLETE
+- **Delivered:**
+  1. **Offline Status Banner** (`lib/core/offline/widgets/offline_status_banner.dart`)
+     - Persistent banner widget that displays at top of parent and child home screens
+     - Four states with smooth AnimatedContainer transitions:
+       * Online + no pending ops: Hidden (0px height)
+       * Offline: Amber banner with cloud_off icon, shows pending count if > 0
+       * Offline + expiring ops (< 1 hour to TTL): Red warning banner with count
+       * Just came online + syncing: Green banner "✓ Syncing X changes..." (auto-dismiss 3s)
+     - Consumes `isOnlineProvider` and `pendingOperationsProvider` from JARVIS
+     - Calls `offlineQueueProvider.getExpiring()` to check for ops aged 23–24 hours
+     - Slim design (40px height) with icon + message layout
+  
+  2. **Conflict Resolution Dialog** (`lib/core/offline/widgets/conflict_resolution_dialog.dart`)
+     - AlertDialog shown when `pendingConflictsProvider` has items
+     - Displays bucket type (Money/Investment/Charity), local value, and server value
+     - Two actions: "Use current value" (useServer) or "Keep my change" (useLocal)
+     - Calls `syncEngine.resolveConflict(opId, ConflictResolution)` to resolve
+     - Cannot be dismissed without choosing (`barrierDismissible: false`)
+     - If multiple conflicts exist, shows them one at a time
+     - Wired up via `showConflictDialogIfNeeded()` helper function
+  
+  3. **TTL Expiry Warning**
+     - Uses `WidgetsBindingObserver` to detect app lifecycle state changes
+     - On app resume (`AppLifecycleState.resumed`), checks for expiring ops
+     - Shows one-time SnackBar: "⚠ You have offline changes that will be lost in less than 1 hour. Connect to sync."
+     - Only shown once per app session (uses `_hasShownExpiryWarning` bool flag)
+     - Orange background, 5-second duration
+
+- **Integration Points:**
+  - Added `OfflineStatusBanner` to `parent_home_screen.dart` and `child_home_screen.dart`
+  - Parent screen: Banner at top of Column before child selector
+  - Child screen: Banner at top of Column wrapping Expanded(SingleChildScrollView)
+  - Conflict dialog listener added in `parent_home_screen` initState via `showConflictDialogIfNeeded()`
+  - App lifecycle observer added to `parent_home_screen` for TTL warning
+
+- **Files Created:**
+  - `lib/core/offline/widgets/offline_status_banner.dart` (145 lines)
+  - `lib/core/offline/widgets/conflict_resolution_dialog.dart` (103 lines)
+
+- **Files Modified:**
+  - `lib/features/auth/presentation/parent_home_screen.dart`
+    - Added imports for offline widgets and providers
+    - Mixed in `WidgetsBindingObserver` to `_ParentHomeScreenState`
+    - Added `initState()` with conflict dialog listener
+    - Added `dispose()` to remove observer
+    - Added `didChangeAppLifecycleState()` for TTL warning
+    - Added `OfflineStatusBanner()` to dashboard Column
+  - `lib/features/auth/presentation/child_home_screen.dart`
+    - Added import for `OfflineStatusBanner`
+    - Wrapped body in Column with banner at top
+
+- **Architecture Compliance:**
+  - ✅ All data consumed from JARVIS's Riverpod providers — no direct Firebase/Hive access
+  - ✅ Material 3 design throughout (FilledButton, OutlinedButton, AlertDialog)
+  - ✅ Smooth animations with AnimatedContainer (300ms ease-in-out)
+  - ✅ Proper error handling and null safety
+  - ✅ Mobile Dev boundary respected — no data layer changes
+
+- **Flutter Analyze:** ✅ 0 issues in lib/
+
+- **Production Ready:** ✅ APPROVED
+  - Offline status banner provides clear visual feedback across all connection states
+  - Conflict resolution dialog enforces user choice (no auto-merge)
+  - TTL expiry warning prevents silent data loss
+  - All three tasks from Sprint 5B delivered
+  - Seamless integration with JARVIS's offline sync engine
+
