@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../children/domain/child.dart';
 import '../../children/providers/children_providers.dart';
@@ -31,7 +32,7 @@ class ChildPickerScreen extends ConsumerWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                tooltip: 'Back to Parent',
+                tooltip: AppLocalizations.of(context).backToParent,
                 onPressed: () {
                   if (context.canPop()) {
                     context.pop();
@@ -87,7 +88,7 @@ class ChildPickerScreen extends ConsumerWidget {
       children: [
         const SizedBox(height: 40),
         Text(
-          'Who are you? 🌟',
+          AppLocalizations.of(context).whoAreYou,
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
             color: Colors.white,
             fontSize: 36,
@@ -144,7 +145,7 @@ class ChildPickerScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -164,10 +165,10 @@ class ChildPickerScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Text(
               child.displayName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -178,6 +179,7 @@ class ChildPickerScreen extends ConsumerWidget {
   }
 
   Widget _buildNoChildren(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -190,7 +192,7 @@ class ChildPickerScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'No children found.',
+              l10n.noChildrenFound,
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
                 color: Colors.white,
                 fontSize: 28,
@@ -199,7 +201,7 @@ class ChildPickerScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Ask a parent to add you!',
+              l10n.askParentToAddYou,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: Colors.white70,
                 fontSize: 20,

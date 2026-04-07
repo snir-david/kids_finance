@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/bucket.dart';
 import '../../domain/bucket_repository.dart';
@@ -15,7 +16,7 @@ class SheetHandle extends StatelessWidget {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: Theme.of(context).colorScheme.outlineVariant,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -50,8 +51,8 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
   Future<void> _onDonate() async {
     if (widget.charityBalance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No funds to donate! 😅'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noFundsToDonate),
           backgroundColor: Colors.red,
         ),
       );
@@ -100,9 +101,9 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
         children: [
           const SheetHandle(),
           const SizedBox(height: 20),
-          const Text(
-            '❤️ Charity',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Text(
+            '❤️ ${AppLocalizations.of(context).charity}',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -114,10 +115,10 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Tap below to donate your full balance to charity 🌍',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -141,9 +142,9 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Donate All 🎁',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  : Text(
+                      AppLocalizations.of(context).donateAll,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
             ),
           ),
@@ -289,10 +290,10 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
           children: [
             const Center(child: SheetHandle()),
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: Text(
-                '📈 Savings',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                '📈 ${AppLocalizations.of(context).savings}',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 8),
@@ -310,9 +311,9 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
 
             // ── Draw to My Money ──────────────────────────────
             const Divider(),
-            const Text(
-              'Draw to My Money 💰',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).drawToMyMoney,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -320,7 +321,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).amount,
                 prefixText: '\$',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -357,9 +358,9 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
 
             // ── Multiply by Parent ────────────────────────────
             const Divider(),
-            const Text(
-              'Multiply by parent ✨',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).multiplyByParent,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -367,7 +368,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Multiplier (e.g. 1.5)',
+                labelText: '${AppLocalizations.of(context).multiplier} (e.g. 1.5)',
                 errorText: _multiplierError,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -396,7 +397,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Multiply 🚀', style: TextStyle(fontSize: 16)),
+                    : Text('${AppLocalizations.of(context).multiply} 🚀', style: const TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -563,10 +564,10 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
           children: [
             const Center(child: SheetHandle()),
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: Text(
-                '💰 My Money',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                '💰 ${AppLocalizations.of(context).myMoney}',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 8),
@@ -584,9 +585,9 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
 
             // ── Section A: Send to Savings ────────────────────
             const Divider(),
-            const Text(
-              'Send to Savings 📈',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).sendToSavings,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -594,7 +595,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).amount,
                 prefixText: '\$',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -623,9 +624,9 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Send to Savings 📈',
-                        style: TextStyle(fontSize: 16),
+                    : Text(
+                        AppLocalizations.of(context).sendToSavings,
+                        style: const TextStyle(fontSize: 16),
                       ),
               ),
             ),
@@ -634,9 +635,9 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
 
             // ── Section B: Send to Charity ────────────────────
             const Divider(),
-            const Text(
-              'Send to Charity ❤️',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context).sendToCharity,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -644,7 +645,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).amount,
                 prefixText: '\$',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -673,9 +674,9 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Send to Charity 🎁',
-                        style: TextStyle(fontSize: 16),
+                    : Text(
+                        AppLocalizations.of(context).sendToCharity,
+                        style: const TextStyle(fontSize: 16),
                       ),
               ),
             ),
@@ -684,14 +685,14 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
 
             // ── Section C: Withdraw ───────────────────────────
             const Divider(),
-            const Text(
-              'Withdraw 💳',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              '${AppLocalizations.of(context).withdraw} 💳',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 2),
-            const Text(
-              'Simulate a purchase',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            Text(
+              AppLocalizations.of(context).simulatePurchase,
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -699,7 +700,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: AppLocalizations.of(context).amount,
                 prefixText: '\$',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -728,9 +729,9 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Withdraw 💳',
-                        style: TextStyle(fontSize: 16),
+                    : Text(
+                        '${AppLocalizations.of(context).withdraw} 💳',
+                        style: const TextStyle(fontSize: 16),
                       ),
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/offline/sync_providers.dart';
 import '../../../core/offline/widgets/conflict_resolution_dialog.dart';
 import '../../../core/offline/widgets/offline_status_banner.dart';
@@ -84,12 +85,12 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
       if (expiringOps.isNotEmpty && mounted) {
         _hasShownExpiryWarning = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              '⚠ You have offline changes that will be lost in less than 1 hour. Connect to sync.',
+              AppLocalizations.of(context).offlineChanges,
             ),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -98,6 +99,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final familyIdAsync = ref.watch(currentFamilyIdProvider);
     final authState = ref.watch(firebaseAuthStateProvider);
     final user = authState.value;
@@ -105,8 +107,8 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     return familyIdAsync.when(
       data: (familyId) {
         if (familyId == null) {
-          return const Scaffold(
-            body: Center(child: Text('No family found')),
+          return Scaffold(
+            body: Center(child: Text(l10n.noFamilyFound)),
           );
         }
 
@@ -116,9 +118,9 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
         return Scaffold(
           appBar: AppBar(
             title: familyAsync.when(
-              data: (family) => Text(family?.name ?? 'Family Dashboard'),
-              loading: () => const Text('Loading...'),
-              error: (_, __) => const Text('Parent Dashboard'),
+              data: (family) => Text(family?.name ?? l10n.familyDashboard),
+              loading: () => Text(l10n.loading),
+              error: (_, __) => Text(l10n.parentDashboard),
             ),
             actions: [
               if (user != null)
@@ -134,12 +136,12 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 ),
               IconButton(
                 icon: const Icon(Icons.settings),
-                tooltip: 'Settings',
+                tooltip: l10n.settings,
                 onPressed: () => context.push('/settings'),
               ),
               IconButton(
                 icon: const Icon(Icons.child_care),
-                tooltip: 'Hand to Child',
+                tooltip: l10n.handToChild,
                 onPressed: () => context.push('/child-picker'),
               ),
               PopupMenuButton<String>(
@@ -150,18 +152,18 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'family_settings',
                     child: ListTile(
-                      leading: Icon(Icons.group_add),
-                      title: Text('Invite Another Parent'),
+                      leading: const Icon(Icons.group_add),
+                      title: Text(l10n.inviteParent),
                     ),
                   ),
                 ],
               ),
               IconButton(
                 icon: const Icon(Icons.logout),
-                tooltip: 'Sign out',
+                tooltip: l10n.signOut,
                 onPressed: () => _signOut(context),
               ),
             ],
@@ -175,7 +177,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Error loading children: $error'),
+                  Text('${l10n.errorLoadingChildren}: $error'),
                 ],
               ),
             ),
@@ -192,19 +194,20 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
   }
 
   Future<void> _signOut(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: Text(l10n.signOut),
+        content: Text(l10n.signOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign Out'),
+            child: Text(l10n.signOut),
           ),
         ],
       ),
@@ -215,6 +218,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
   }
 
   Widget _buildDashboard(BuildContext context, String familyId, List<Child> children) {
+    final l10n = AppLocalizations.of(context);
     if (children.isEmpty) {
       return Center(
         child: Column(
@@ -222,17 +226,17 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           children: [
             const Icon(Icons.family_restroom, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text(
-              'No children yet',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            Text(
+              l10n.noChildrenYet,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            const Text('Add your first child to get started'),
+            Text(l10n.addToGetStarted),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _showAddChildDialog(context, familyId),
               icon: const Icon(Icons.add),
-              label: const Text('Add Child'),
+              label: Text(l10n.addChild),
             ),
           ],
         ),
@@ -274,6 +278,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     List<Child> children,
     String? selectedChildId,
   ) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 100,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -291,10 +296,10 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 child: Container(
                   width: 80,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.grey.shade300,
+                      color: Theme.of(context).colorScheme.outline,
                       style: BorderStyle.solid,
                     ),
                   ),
@@ -302,13 +307,13 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.add_circle_outline,
-                          size: 32, color: Colors.grey.shade500),
+                          size: 32, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(height: 4),
                       Text(
-                        'Add',
+                        l10n.add,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -332,12 +337,12 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                      : Colors.white,
+                      : Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.primaryColor
-                        : Colors.grey.shade300,
+                        : Theme.of(context).colorScheme.outline,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -357,7 +362,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                             isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected
                             ? AppTheme.primaryColor
-                            : Colors.black87,
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
@@ -374,6 +379,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
   }
 
   Widget _buildChildBuckets(BuildContext context, String familyId, Child child) {
+    final l10n = AppLocalizations.of(context);
     final bucketsAsync = ref.watch(childBucketsProvider((
       childId: child.id,
       familyId: familyId,
@@ -399,7 +405,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                 children: [
                   Expanded(
                     child: Text(
-                      "${child.displayName}'s Buckets",
+                      l10n.childBuckets(child.displayName),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
@@ -413,7 +419,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                       ),
                     ),
                     icon: const Icon(Icons.history, size: 18),
-                    label: const Text('History'),
+                    label: Text(l10n.history),
                   ),
                 ],
               ),
@@ -430,7 +436,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                         child,
                       ),
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add'),
+                      label: Text(l10n.add),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -448,7 +454,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                         mode: _BucketActionMode.remove,
                       ),
                       icon: const Icon(Icons.remove, size: 18),
-                      label: const Text('Remove'),
+                      label: Text(l10n.remove),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.orange,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -464,7 +470,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                         child,
                       ),
                       icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Edit'),
+                      label: Text(l10n.edit),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -479,7 +485,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
               // Three buckets below - tappable to open action sheets
               _BucketCard(
                 emoji: '💰',
-                name: 'Money',
+                name: l10n.myMoney,
                 balance: moneyBucket.balance,
                 color: AppTheme.moneyColor,
                 onTap: () => showModalBottomSheet<void>(
@@ -501,7 +507,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
               const SizedBox(height: 12),
               _BucketCard(
                 emoji: '📈',
-                name: 'Investment',
+                name: l10n.investment,
                 balance: investmentBucket.balance,
                 color: AppTheme.investmentsColor,
                 onTap: () => showModalBottomSheet<void>(
@@ -523,7 +529,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
               const SizedBox(height: 12),
               _BucketCard(
                 emoji: '❤️',
-                name: 'Charity',
+                name: l10n.charity,
                 balance: charityBucket.balance,
                 color: AppTheme.charityColor,
                 onTap: () => showModalBottomSheet<void>(
@@ -553,7 +559,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            Text('Error loading buckets: $error'),
+            Text('${l10n.errorLoading}: $error'),
           ],
         ),
       ),
@@ -609,7 +615,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("✅ Added to ${child.displayName}'s buckets!"),
+                content: Text(AppLocalizations.of(context).addedToBuckets(child.displayName)),
                 backgroundColor: Colors.green,
               ),
             );
@@ -661,7 +667,7 @@ class _BucketCard extends StatelessWidget {
       child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
         boxShadow: [
@@ -678,7 +684,7 @@ class _BucketCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
@@ -690,8 +696,10 @@ class _BucketCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
@@ -823,8 +831,9 @@ class _AddChildDialogState extends State<_AddChildDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Add Child'),
+      title: Text(l10n.addChild),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -835,16 +844,16 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               controller: _nameController,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.childName,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
 
             // Emoji picker
-            const Text('Avatar',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(l10n.avatar,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -861,7 +870,7 @@ class _AddChildDialogState extends State<_AddChildDialog> {
                       border: Border.all(
                         color: isSelected
                             ? AppTheme.primaryColor
-                            : Colors.grey.shade300,
+                            : Theme.of(context).colorScheme.outline,
                         width: isSelected ? 2 : 1,
                       ),
                       color: isSelected
@@ -883,8 +892,8 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               obscureText: true,
               maxLength: _kMaxPinLength,
               decoration: InputDecoration(
-                labelText: 'PIN ($_kMinPinLength–$_kMaxPinLength digits)',
-                border: OutlineInputBorder(),
+                labelText: '${l10n.pin} ($_kMinPinLength–$_kMaxPinLength digits)',
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -894,9 +903,9 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: _kMaxPinLength,
-              decoration: const InputDecoration(
-                labelText: 'Confirm PIN',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.confirmPin,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -912,7 +921,7 @@ class _AddChildDialogState extends State<_AddChildDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _submit,
@@ -922,7 +931,7 @@ class _AddChildDialogState extends State<_AddChildDialog> {
                   height: 16,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white))
-              : const Text('Add'),
+              : Text(l10n.add),
         ),
       ],
     );
@@ -974,24 +983,6 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
         widget.familyId,
       ),
     );
-  }
-
-  String get _title {
-    switch (widget.mode) {
-      case _BucketActionMode.add:
-        return 'Add to Bucket';
-      case _BucketActionMode.remove:
-        return 'Remove from Bucket';
-    }
-  }
-
-  String get _buttonLabel {
-    switch (widget.mode) {
-      case _BucketActionMode.add:
-        return 'Add';
-      case _BucketActionMode.remove:
-        return 'Remove';
-    }
   }
 
   Future<void> _submit() async {
@@ -1120,40 +1111,43 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
     final currentBucket = _currentBucket;
     final amount = double.tryParse(_amountController.text);
     final isAmountInvalid = amount == null || amount <= 0;
+    final l10n = AppLocalizations.of(context);
+    final title = widget.mode == _BucketActionMode.add ? l10n.addToBucket : l10n.removeFromBucket;
+    final buttonLabel = widget.mode == _BucketActionMode.add ? l10n.add : l10n.remove;
 
     return AlertDialog(
-      title: Text(_title),
+      title: Text(title),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Bucket selector
-            const Text(
-              'Which bucket?',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            Text(
+              l10n.whichBucket,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 8),
             SegmentedButton<BucketType>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: BucketType.money,
-                  label: Text('💰 Money'),
+                  label: Text('💰 ${l10n.myMoney}'),
                 ),
                 ButtonSegment(
                   value: BucketType.investment,
-                  label: Text('📈 Investment'),
+                  label: Text('📈 ${l10n.investment}'),
                 ),
                 ButtonSegment(
                   value: BucketType.charity,
-                  label: Text('❤️ Charity'),
+                  label: Text('❤️ ${l10n.charity}'),
                 ),
               ],
               selected: {_selectedBucket},
               onSelectionChanged: (Set<BucketType> selected) {
                 setState(() {
                   _selectedBucket = selected.first;
-                  _error = null; // Clear error when bucket changes
+                  _error = null;
                 });
               },
             ),
@@ -1161,9 +1155,9 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
 
             // Current balance
             Text(
-              'Current balance: \$${currentBucket.balance.toStringAsFixed(2)}',
+              l10n.currentBalance('\$${currentBucket.balance.toStringAsFixed(2)}'),
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),
@@ -1178,7 +1172,7 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
               decoration: InputDecoration(
                 prefixText: widget.mode == _BucketActionMode.add ? '+\$' : '-\$',
                 hintText: '0.00',
-                labelText: 'Amount',
+                labelText: l10n.amount,
                 border: const OutlineInputBorder(),
                 helperText: isAmountInvalid ? 'Amount must be greater than 0' : null,
                 helperStyle: TextStyle(color: isAmountInvalid ? Colors.red : null),
@@ -1189,9 +1183,9 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
             // Note field
             TextField(
               controller: _noteController,
-              decoration: const InputDecoration(
-                labelText: 'Note (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.noteOptional,
+                border: const OutlineInputBorder(),
               ),
             ),
 
@@ -1208,7 +1202,7 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: (_isLoading || isAmountInvalid) ? null : _submit,
@@ -1226,7 +1220,7 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
                     color: Colors.white,
                   ),
                 )
-              : Text(_buttonLabel),
+              : Text(buttonLabel),
         ),
       ],
     );
@@ -1394,17 +1388,18 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
   @override
   Widget build(BuildContext context) {
     final hasTotal = _totalAmount > 0;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: Text('Add Funds for ${widget.child.displayName}'),
+      title: Text(l10n.addFundsFor(widget.child.displayName)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Total Amount',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            Text(
+              l10n.totalAmount,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -1412,18 +1407,18 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
               onChanged: (_) => _updateFields(),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixText: '\$',
                 hintText: '0.00',
-                labelText: 'Total amount',
-                border: OutlineInputBorder(),
+                labelText: l10n.totalAmount,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
 
-            const Text(
-              'Per Bucket (optional)',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            Text(
+              l10n.perBucketOptional,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 12),
 
@@ -1431,11 +1426,11 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               controller: _moneyController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixText: '\$',
                 hintText: '0.00',
-                labelText: '💰 Money',
-                border: OutlineInputBorder(),
+                labelText: '💰 ${l10n.myMoney}',
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1444,11 +1439,11 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               controller: _investmentController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixText: '\$',
                 hintText: '0.00',
-                labelText: '📈 Investment',
-                border: OutlineInputBorder(),
+                labelText: '📈 ${l10n.investment}',
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1457,11 +1452,11 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               controller: _charityController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 prefixText: '\$',
                 hintText: '0.00',
-                labelText: '❤️ Charity',
-                border: OutlineInputBorder(),
+                labelText: '❤️ ${l10n.charity}',
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1487,9 +1482,9 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Remaining:',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  Text(
+                    l10n.remaining,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   Text(
                     '\$${_remaining.abs().toStringAsFixed(2)}'
@@ -1510,9 +1505,9 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
 
             TextField(
               controller: _noteController,
-              decoration: const InputDecoration(
-                labelText: 'Note (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.noteOptional,
+                border: const OutlineInputBorder(),
               ),
             ),
 
@@ -1529,11 +1524,11 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         OutlinedButton(
           onPressed: (_isLoading || !hasTotal) ? null : _autoDistribute,
-          child: const Text('Auto-Distribute'),
+          child: Text(l10n.autoDistribute),
         ),
         FilledButton(
           onPressed: (_isLoading || !hasTotal) ? null : _submit,
@@ -1543,7 +1538,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : const Text('Add Funds'),
+              : Text(l10n.addFunds),
         ),
       ],
     );
@@ -1637,8 +1632,8 @@ class _EditChildDialogState extends State<_EditChildDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Changes saved'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).save),
             backgroundColor: Colors.green,
           ),
         );
@@ -1660,22 +1655,23 @@ class _EditChildDialogState extends State<_EditChildDialog> {
   }
 
   Future<void> _showArchiveConfirmation() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Archive Child?'),
+        title: Text('${l10n.archiveChild}?'),
         content: Text(
-          "Are you sure? ${widget.child.displayName}'s data will be preserved but they'll be removed from your family.",
+          "${l10n.areYouSure} ${widget.child.displayName}'s data will be preserved but they'll be removed from your family.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Archive'),
+            child: Text(l10n.archiveChild),
           ),
         ],
       ),
@@ -1700,12 +1696,10 @@ class _EditChildDialogState extends State<_EditChildDialog> {
       );
 
       if (mounted) {
-        // Close the edit dialog
         Navigator.pop(context);
-        // Show confirmation
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.child.displayName} has been archived'),
+            content: Text(AppLocalizations.of(context).childHasBeenArchived(widget.child.displayName)),
             backgroundColor: Colors.orange,
           ),
         );
@@ -1727,9 +1721,11 @@ class _EditChildDialogState extends State<_EditChildDialog> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Edit Child'),
+      title: Text(l10n.editChild),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1738,18 +1734,18 @@ class _EditChildDialogState extends State<_EditChildDialog> {
             TextField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.displayName,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
 
             TextField(
               controller: _emojiController,
-              decoration: const InputDecoration(
-                labelText: 'Avatar Emoji',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.avatar,
+                border: const OutlineInputBorder(),
                 hintText: '🦁',
               ),
             ),
@@ -1757,9 +1753,9 @@ class _EditChildDialogState extends State<_EditChildDialog> {
 
             const Divider(),
             const SizedBox(height: 8),
-            const Text(
-              'Change PIN (optional)',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+            Text(
+              l10n.changePinOptional,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
             ),
             const SizedBox(height: 12),
 
@@ -1769,7 +1765,7 @@ class _EditChildDialogState extends State<_EditChildDialog> {
               obscureText: true,
               maxLength: _kMaxPinLength,
               decoration: InputDecoration(
-                labelText: 'New PIN ($_kMinPinLength–$_kMaxPinLength digits)',
+                labelText: '${l10n.pin} ($_kMinPinLength–$_kMaxPinLength digits)',
                 border: const OutlineInputBorder(),
                 counterText: '',
               ),
@@ -1781,9 +1777,9 @@ class _EditChildDialogState extends State<_EditChildDialog> {
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: _kMaxPinLength,
-              decoration: const InputDecoration(
-                labelText: 'Confirm New PIN',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.confirmPin,
+                border: const OutlineInputBorder(),
                 counterText: '',
               ),
             ),
@@ -1796,9 +1792,9 @@ class _EditChildDialogState extends State<_EditChildDialog> {
             TextButton.icon(
               onPressed: _isLoading ? null : _showArchiveConfirmation,
               icon: const Icon(Icons.archive_outlined, color: Colors.red),
-              label: const Text(
-                'Archive Child',
-                style: TextStyle(color: Colors.red),
+              label: Text(
+                l10n.archiveChild,
+                style: const TextStyle(color: Colors.red),
               ),
             ),
 
@@ -1815,7 +1811,7 @@ class _EditChildDialogState extends State<_EditChildDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _submit,
@@ -1828,7 +1824,7 @@ class _EditChildDialogState extends State<_EditChildDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Save'),
+              : Text(l10n.save),
         ),
       ],
     );
@@ -1838,24 +1834,25 @@ class _EditChildDialogState extends State<_EditChildDialog> {
 // ─── Family Settings Dialog ────────────────────────────────────────────────────
 
 void _showFamilySettingsDialog(BuildContext context, WidgetRef ref, String familyId) {
+  final l10n = AppLocalizations.of(context);
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.group_add, color: Colors.deepPurple),
-          SizedBox(width: 8),
-          Text('Invite Another Parent'),
+          const Icon(Icons.group_add, color: Colors.deepPurple),
+          const SizedBox(width: 8),
+          Text(l10n.inviteParent),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Share this Family Code with another parent.',
-            style: TextStyle(fontSize: 14),
+          Text(
+            l10n.shareFamilyCode,
+            style: const TextStyle(fontSize: 14),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -1873,9 +1870,9 @@ void _showFamilySettingsDialog(BuildContext context, WidgetRef ref, String famil
             ),
             child: Column(
               children: [
-                const Text(
-                  'Family Code',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                Text(
+                  l10n.familyCode,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
                 SelectableText(
@@ -1895,7 +1892,7 @@ void _showFamilySettingsDialog(BuildContext context, WidgetRef ref, String famil
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Close'),
+          child: Text(l10n.back),
         ),
       ],
     ),

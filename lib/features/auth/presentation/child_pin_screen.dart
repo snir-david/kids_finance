@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../providers/auth_providers.dart';
 import '../data/pin_service.dart';
 import '../../children/providers/children_providers.dart';
@@ -117,7 +118,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
   void _showWrongPinError(int attemptsRemaining) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Wrong PIN. $attemptsRemaining tries remaining'),
+        content: Text(AppLocalizations.of(context).wrongPinWithAttempts(attemptsRemaining)),
         backgroundColor: Colors.orange,
         duration: const Duration(seconds: 2),
       ),
@@ -139,9 +140,9 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
     return childAsync.when(
       data: (child) => child != null
           ? '${child.avatarEmoji} ${child.displayName}'
-          : 'Enter PIN',
-      loading: () => 'Loading...',
-      error: (_, __) => 'Enter PIN',
+          : AppLocalizations.of(context).enterPin,
+      loading: () => AppLocalizations.of(context).loading,
+      error: (_, __) => AppLocalizations.of(context).enterPin,
     );
   }
 
@@ -253,7 +254,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
     return Container(
       margin: const EdgeInsets.all(8),
       child: Material(
-        color: Colors.grey[200],
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(40),
         child: InkWell(
           onTap: _isVerifying ? null : () => _onDigitTapped(digit),
@@ -279,7 +280,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
     return Container(
       margin: const EdgeInsets.all(8),
       child: Material(
-        color: Colors.grey[200],
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(40),
         child: InkWell(
           onTap: _isVerifying ? null : _onBackspace,
@@ -324,7 +325,7 @@ class _ChildPinScreenState extends ConsumerState<ChildPinScreen>
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: const Text('Enter PIN'),
+          title: Text(AppLocalizations.of(context).enterPin),
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),

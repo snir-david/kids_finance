@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
@@ -89,7 +90,7 @@ class ChildHomeScreen extends ConsumerWidget {
                   backgroundColor: Colors.transparent,
                   elevation: 0,
                   title: Text(
-                    'Hi ${child.displayName}! 👋',
+                    AppLocalizations.of(context).hiName(child.displayName),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -97,7 +98,7 @@ class ChildHomeScreen extends ConsumerWidget {
                   actions: [
                     IconButton(
                       icon: const Icon(Icons.exit_to_app),
-                      tooltip: 'Back to Parent',
+                      tooltip: AppLocalizations.of(context).backToParent,
                       onPressed: () {
                         ref.read(activeChildProvider.notifier).setState(null);
                         ref.read(selectedChildProvider.notifier).setState(null);
@@ -194,9 +195,9 @@ class ChildHomeScreen extends ConsumerWidget {
                       ),
                       child: Column(
                         children: [
-                          const Text(
-                            'Total Money',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context).totalMoney,
+                            style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -221,7 +222,7 @@ class ChildHomeScreen extends ConsumerWidget {
                     _buildKidBucketCard(
                       context,
                       emoji: '💰',
-                      name: 'Money',
+                      name: AppLocalizations.of(context).money,
                       balance: moneyBucket.balance,
                       color: AppTheme.moneyColor,
                       isLarge: true,
@@ -239,7 +240,7 @@ class ChildHomeScreen extends ConsumerWidget {
                           child: _buildKidBucketCard(
                             context,
                             emoji: '📈',
-                            name: 'Savings',
+                            name: AppLocalizations.of(context).savings,
                             balance: investmentBucket.balance,
                             color: AppTheme.investmentsColor,
                             isLarge: false,
@@ -253,7 +254,7 @@ class ChildHomeScreen extends ConsumerWidget {
                           child: _buildKidBucketCard(
                             context,
                             emoji: '❤️',
-                            name: 'Charity',
+                            name: AppLocalizations.of(context).charity,
                             balance: charityBucket.balance,
                             color: AppTheme.charityColor,
                             isLarge: false,
@@ -377,7 +378,7 @@ class ChildHomeScreen extends ConsumerWidget {
       child: Container(
         padding: EdgeInsets.all(isLarge ? 24 : 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
           boxShadow: [
@@ -401,7 +402,7 @@ class ChildHomeScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: isLarge ? 24 : 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             SizedBox(height: isLarge ? 8 : 4),
@@ -446,7 +447,7 @@ class ChildHomeScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Recent Activity',
+              AppLocalizations.of(context).recentActivity,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -456,7 +457,7 @@ class ChildHomeScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(

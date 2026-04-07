@@ -107,6 +107,62 @@ class AppLocalizations {
       isHebrew
           ? '⚠ יש לך שינויים לא מסונכרנים שיאבדו בפחות משעה. התחבר לסנכרן.'
           : '⚠ You have offline changes that will be lost in less than 1 hour. Connect to sync.';
+
+  // ─── Bucket / screen labels ────────────────────────────────────────────────
+  String get history => isHebrew ? 'היסטוריה' : 'History';
+  String get money => isHebrew ? 'כסף' : 'Money';
+  String get savings => isHebrew ? 'חיסכון' : 'Savings';
+  String get addFunds => isHebrew ? 'הוסף כסף' : 'Add Funds';
+  String get backToParent => isHebrew ? 'חזור להורה' : 'Back to Parent';
+  String get totalMoney => isHebrew ? 'סך כל הכסף' : 'Total Money';
+  String get recentActivity => isHebrew ? 'פעילות אחרונה' : 'Recent Activity';
+  String get whoAreYou => isHebrew ? 'מי אתה? 🌟' : 'Who are you? 🌟';
+  String get askParentToAddYou => isHebrew ? 'בקש מהורה להוסיף אותך!' : 'Ask a parent to add you!';
+  String get noChildrenFound => isHebrew ? 'לא נמצאו ילדים.' : 'No children found.';
+  String get avatar => isHebrew ? 'אווטאר' : 'Avatar';
+  String get confirmPin => isHebrew ? 'אשר קוד' : 'Confirm PIN';
+  String get pinsDoNotMatch => isHebrew ? 'הקודים אינם תואמים' : 'PINs do not match';
+  String get pleaseEnterName => isHebrew ? 'נא להכניס שם' : 'Please enter a name';
+  String get addToBucket => isHebrew ? 'הוסף לקופסה' : 'Add to Bucket';
+  String get removeFromBucket => isHebrew ? 'הסר מקופסה' : 'Remove from Bucket';
+  String get whichBucket => isHebrew ? 'לאיזו קופסה?' : 'Which bucket?';
+  String get totalAmount => isHebrew ? 'סכום כולל' : 'Total Amount';
+  String get perBucketOptional => isHebrew ? 'לפי קופסה (אופציונלי)' : 'Per Bucket (optional)';
+  String get noteOptional => isHebrew ? 'הערה (אופציונלי)' : 'Note (optional)';
+  String get simulatePurchase => isHebrew ? 'סמלץ קנייה' : 'Simulate a purchase';
+  String get donateAll => isHebrew ? 'תרום הכל 🎁' : 'Donate All 🎁';
+  String get noFundsToDonate => isHebrew ? 'אין כסף לתרום! 😅' : 'No funds to donate! 😅';
+  String get drawToMyMoney => isHebrew ? 'משוך לכסף שלי 💰' : 'Draw to My Money 💰';
+  String get multiplyByParent => isHebrew ? 'הכפל על ידי הורה ✨' : 'Multiply by parent ✨';
+  String get sendToSavings => isHebrew ? 'שלח לחיסכון 📈' : 'Send to Savings 📈';
+  String get sendToCharity => isHebrew ? 'שלח לצדקה ❤️' : 'Send to Charity ❤️';
+  String get autoDistribute => isHebrew ? 'חלוקה אוטומטית' : 'Auto-Distribute';
+  String get remaining => isHebrew ? 'נשאר:' : 'Remaining:';
+  String get editChild => isHebrew ? 'ערוך ילד' : 'Edit Child';
+  String get archiveChild => isHebrew ? 'ארכב ילד' : 'Archive Child';
+  String get changePinOptional => isHebrew ? 'שנה קוד (אופציונלי)' : 'Change PIN (optional)';
+  String get displayName => isHebrew ? 'שם תצוגה' : 'Display Name';
+  String get familyCode => isHebrew ? 'קוד משפחה' : 'Family Code';
+  String get shareFamilyCode =>
+      isHebrew
+          ? 'שתף את קוד המשפחה עם הורה נוסף.'
+          : 'Share this Family Code with another parent.';
+  String get addToGetStarted => isHebrew ? 'הוסף את הילד הראשון כדי להתחיל' : 'Add your first child to get started';
+
+  // ─── Parameterised helpers ─────────────────────────────────────────────────
+  String hiName(String name) => isHebrew ? 'שלום $name! 👋' : 'Hi $name! 👋';
+  String addedToBuckets(String name) =>
+      isHebrew ? '✅ נוסף לקופסאות של $name!' : "✅ Added to $name's buckets!";
+  String addFundsFor(String name) =>
+      isHebrew ? 'הוסף כסף עבור $name' : 'Add Funds for $name';
+  String childBuckets(String name) =>
+      isHebrew ? 'הקופסאות של $name' : "$name's Buckets";
+  String wrongPinWithAttempts(int n) =>
+      isHebrew ? 'קוד שגוי. $n ניסיונות נותרו' : 'Wrong PIN. $n tries remaining';
+  String childHasBeenArchived(String name) =>
+      isHebrew ? '$name הועבר לארכיון' : '$name has been archived';
+  String currentBalance(String amount) =>
+      isHebrew ? 'יתרה נוכחית: $amount' : 'Current balance: $amount';
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
