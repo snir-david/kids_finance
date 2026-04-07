@@ -8,7 +8,8 @@ enum TransactionType {
   investmentMultiplied,
   charityDonated,
   moneyAdded,
-  moneyRemoved;
+  moneyRemoved,
+  distributed;
 
   String toJson() => name;
 

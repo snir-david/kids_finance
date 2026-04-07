@@ -54,4 +54,17 @@ abstract class BucketRepository {
     required String performedByUid,
     String? note,
   });
+
+  /// Distribute/split an allowance across all 3 buckets atomically.
+  /// Each amount must be >= 0 and total must be > 0.
+  /// Creates one transaction log entry per bucket with type 'distributed'.
+  Future<void> distributeFunds({
+    required String familyId,
+    required String childId,
+    required double moneyAmount,
+    required double investmentAmount,
+    required double charityAmount,
+    required String performedByUid,
+    String? note,
+  });
 }

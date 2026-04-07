@@ -1,3 +1,4 @@
+import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../domain/child.dart';
 import '../domain/child_repository.dart';
@@ -29,8 +30,9 @@ class FirebaseChildRepository implements ChildRepository {
   Future<void> updateChild({
     required String childId,
     required String familyId,
-    String? displayName,
+    String? name,
     String? avatarEmoji,
+    String? newPin,
   }) async {
     final childRef = _firestore
         .collection('families')
@@ -39,8 +41,9 @@ class FirebaseChildRepository implements ChildRepository {
         .doc(childId);
 
     final updates = <String, dynamic>{};
-    if (displayName != null) updates['displayName'] = displayName;
+    if (name != null) updates['displayName'] = name;
     if (avatarEmoji != null) updates['avatarEmoji'] = avatarEmoji;
+    if (newPin != null) updates['pinHash'] = BCrypt.hashpw(newPin, BCrypt.gensalt());
 
     if (updates.isNotEmpty) {
       await childRef.update(updates);
@@ -74,6 +77,19 @@ class FirebaseChildRepository implements ChildRepository {
         .collection('children')
         .doc(childId);
 
-    await childRef.update({'sessionExpiresAt': expiresAt.toIso8601String()});
+    await childRef.update({'sessionExpiresAt': Timestamp.fromDate(expiresAt)});
+  }
+
+  @override
+  Future<void> archiveChild({
+    required String familyId,
+    required String childId,
+  }) async {
+    await _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId)
+        .update({'archived': true});
   }
 }

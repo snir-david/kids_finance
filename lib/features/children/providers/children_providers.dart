@@ -10,7 +10,7 @@ final childRepositoryProvider = Provider<ChildRepository>((ref) {
   return FirebaseChildRepository(firestore: FirebaseFirestore.instance);
 });
 
-/// Stream provider for all children in a family
+/// Stream provider for all children in a family (excludes archived children)
 final childrenProvider =
     StreamProvider.family<List<Child>, String>((ref, familyId) {
   return FirebaseFirestore.instance
@@ -19,12 +19,10 @@ final childrenProvider =
       .collection('children')
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
-      return Child.fromJson({
-        'id': doc.id,
-        ...doc.data(),
-      });
-    }).toList();
+    return snapshot.docs
+        .map((doc) => Child.fromJson({'id': doc.id, ...doc.data()}))
+        .where((c) => !c.archived)
+        .toList();
   });
 });
 

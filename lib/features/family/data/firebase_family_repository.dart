@@ -135,7 +135,7 @@ class FirebaseFamilyRepository implements FamilyRepository {
         'familyId': familyId,
         'type': bucketType,
         'balance': 0.0,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
     }
 

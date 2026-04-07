@@ -9,6 +9,7 @@ import '../features/auth/presentation/parent_home_screen.dart';
 import '../features/auth/presentation/child_home_screen.dart';
 import '../features/auth/presentation/child_pin_screen.dart';
 import '../features/auth/presentation/child_picker_screen.dart';
+import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
@@ -53,10 +54,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final currentLocation = state.matchedLocation;
 
       // ── Unauthenticated ──────────────────────────────────────────────────
-      // Only /login and /family-setup are accessible without an account.
+      // Only /login, /family-setup, and /forgot-password are accessible without an account.
       if (!isLoggedIn) {
         if (currentLocation == '/login' ||
-            currentLocation == '/family-setup') {
+            currentLocation == '/family-setup' ||
+            currentLocation == '/forgot-password') {
           return null; // Allow
         }
         return '/login';
@@ -92,6 +94,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/family-setup',

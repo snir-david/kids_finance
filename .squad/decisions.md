@@ -218,3 +218,311 @@
 ### 2026-04-05: Team Universe
 **Decision:** Iron Man (Marvel) universe for agent names
 **Rationale:** User preference specified at team formation.
+
+---
+
+## Sprint 5A Decisions (2026-04-07)
+
+### JARVIS Sprint 5A Backend Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** JARVIS (Backend Dev)
+
+**Deliverables:**
+1. `distributeFunds(money, investment, charity)` — Atomic Firestore transaction splitting allowance across 3 buckets
+2. `updateChild(id, name, avatar, newPin)` — Edit child with optional field updates and bcrypt PIN hashing
+3. `archiveChild(childId)` — Soft-delete via archived:true flag, filtered from UI
+4. All domain models updated with new fields and enum variants
+5. flutter analyze: **0 errors**
+
+**Key Points:**
+- Timestamp handling: `Timestamp.fromDate(DateTime.now())` (not ISO strings)
+- Soft delete pattern enforced (data preserved)
+- Parent-only operations (children cannot call)
+- Multiply-by-zero guard: distributeFunds requires total > 0
+- BCrypt hashing applied to PIN updates
+
+---
+
+### Rhodey Sprint 5A UI Wave 1 Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** Rhodey (Mobile Dev)
+
+**Deliverables:**
+1. **Celebration Animations** using flutter_animate:
+   - Money: falling coins 🪙 (2.5s)
+   - Investment: confetti burst 🎊🎉⭐✨💫 (3.5s)
+   - Charity: floating hearts ❤️💖💗💝💕 (4.5s)
+2. **Forgot Password Screen** with FirebaseAuth integration, error handling, loading state
+3. **Zero-Amount Validation** — inline validation with disabled button + error text
+4. **Kids Screen Redesign** — unified action bar (Add/Remove/Edit) with bucket selector, smart validation
+5. Removed 489 lines of dead code (old dialogs)
+6. flutter analyze: **0 errors in implementation code**
+
+**Design Decisions:**
+- Celebration timing reflects animation complexity and emotional weight
+- Celebrations trigger only on Add (not Remove) to reinforce positive behavior
+- Forgot password uses direct FirebaseAuth (appropriate for pre-auth operation)
+- Zero-amount validation: disabled button + hint text > modal error
+- Code cleanup improved maintainability
+
+---
+
+### Happy Sprint 5A Test Suite Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** Happy (QA/Tester)
+
+**Deliverables:**
+1. 33 tests written across 6 new test files
+2. **Passing:** 14 runnable tests (celebration animations + zero validation)
+3. **Anticipatory:** 19 tests (awaiting feature implementation)
+
+**Test Files Created:**
+- `test/features/buckets/distribute_funds_test.dart` (4 tests)
+- `test/features/buckets/celebration_overlay_test.dart` (6 tests, ✅ passing)
+- `test/features/children/edit_child_test.dart` (5 tests)
+- `test/features/children/archive_child_test.dart` (4 tests)
+- `test/features/auth/forgot_password_screen_test.dart` (6 tests)
+- `test/widget/amount_input_dialog_test.dart` (8 tests, ✅ passing)
+
+**Key Finding:** AmountInputDialog already has perfect zero validation — no code changes needed!
+
+---
+
+### Rhodey Kids Screen Redesign Delivery
+**Date:** 2026-04-07  
+**Status:** ✅ COMPLETE  
+**Decided by:** Rhodey (Mobile Dev)
+
+**Problem Fixed:** UX bug — only Money bucket had Add/Remove buttons; Investment and Charity were read-only
+
+**Solution Implemented:**
+- Unified action bar with Add/Remove/Edit FilledButton.icon trio
+- Bucket selector segmented button in dialog (Money | Investment | Charity)
+- Smart validation:
+  - Investment Remove: Blocked with error "can only multiply"
+  - Charity Remove: Blocked with error "can only donate"
+  - Money: Full Add/Remove support
+- Zero-amount validation prevents operations ≤ 0
+- Current balance display in dialog
+
+**Architecture Notes:**
+- No new Firebase logic (reuses existing repository methods)
+- Mobile Dev boundary respected
+- flutter analyze: 0 issues
+
+---
+
+## Prior Phase Decisions (Locked In)
+
+### Code Generation Decision (JARVIS — 2024-04-05)
+**Status:** IMPLEMENTED  
+**Context:** Flutter 3.41.6 incompatible with build_runner/freezed/riverpod_generator
+
+**Decision:** Remove code generation, use plain Dart + Equatable
+
+**Consequences:**
+- ✅ No dependency conflicts, faster builds, simpler tooling
+- ⚠️ More boilerplate (manual copyWith, fromJson, toJson, props)
+- ✅ Better IDE support, more explicit code
+
+**Mitigation:** Code snippets/templates, thorough tests, documented patterns
+
+---
+
+### Timestamp Bug Fix (JARVIS — 2024-04-05)
+**Status:** FIXED  
+**Root Cause:** Writing ISO 8601 strings to Firestore Timestamp fields
+
+**Fix Applied:**
+- Write-side: All operations use `Timestamp.fromDate(now)` (not ISO strings)
+- Read-side: Safe pattern handles both Timestamp and String for backward compatibility
+
+**Files Fixed:** firebase_family_repository, firebase_bucket_repository, firebase_child_repository, bucket.dart, child.dart
+
+---
+
+### Core Widget Library (Pepper — 2026-04-05)
+**Status:** ✅ IMPLEMENTED
+
+**Key Design Decisions:**
+1. **BucketCard:** Subtle fade-in + scale in Kid Mode, no animation in Parent Mode
+2. **PIN Input:** 3×4 numpad (phone keypad muscle memory), 70dp buttons, 20dp dots
+3. **ChildAvatar:** Three explicit sizes (Small/Medium/Large) for consistency
+4. **AmountInputDialog:** Real-time validation with disabled confirm button
+5. **Dual-Mode:** Enforces consistency across app
+
+---
+
+### Auth Screens Implementation (Fury — 2026-04-06)
+**Status:** ✅ COMPLETE
+
+**Screens Delivered:**
+1. **LoginScreen:** Email/password + Google Sign-In, form validation, error handling
+2. **FamilySetupScreen:** First-time family creation, welcome header, family name input
+3. **ChildPinScreen:** PIN entry with numpad, validation, session management
+
+---
+
+### Dashboard Implementation (Rhodey — 2025-01-XX)
+**Status:** ✅ IMPLEMENTED
+
+**Parent Dashboard:**
+- Family name display, child selector (horizontal scroll), bucket cards
+- Three action buttons: Set Money, Multiply Investment, Donate Charity
+- Auto-selection of first child on load
+- Provider wiring: currentFamilyIdProvider → familyProvider → childrenProvider → selectedChildIdProvider → childBucketsProvider
+
+**Child Dashboard:**
+- Greeting, total wealth summary, three bucket cards
+- Recent transaction history (last 3 items) with relative time formatting
+- Provider wiring: activeChildProvider → childProvider → childBucketsProvider → recentTransactionsProvider
+
+---
+
+### Phase 4 Architecture (Stark — 2026-04-05)
+**Status:** ✅ APPROVED & LOCKED IN
+
+**Solutions Implemented:**
+1. **Child Picker Screen** — Horizontal list with emoji avatars, seamless PIN entry
+2. **Invite Code = FamilyId** — No Cloud Functions needed, permanent invite
+3. **Multi-Parent Permissions** — isOwner flag, owner can delete family
+4. **PIN Screen Hard Gate** — PopScope + automaticallyImplyLeading fix, no bypass vectors
+
+**Original 7/7 Requirements Met:**
+- ✅ Kids have Money/Investment/Charity buckets
+- ✅ Investment can be multiplied by parent
+- ✅ Charity resets when donated
+- ✅ Multiple children supported
+- ✅ Multiple parents can manage family
+- ✅ Architecture compliance (feature-first, repository pattern, Riverpod)
+- ✅ Security compliance (two-tier auth, bcrypt, Firestore rules, Cloud Functions)
+
+**Code Quality:** 31 tests passing (92% coverage), 0 lint issues
+
+---
+
+### Phase 1 Test Suite (Happy — January 2025)
+**Status:** ✅ APPROVED & IMPLEMENTED
+
+**Test Strategy:**
+- 72 comprehensive unit and widget tests
+- Domain model testing (creation, copyWith, equality, props)
+- Enum testing (values, toJson/fromJson)
+- Crypto testing without Firebase (BCrypt directly)
+- Smoke tests (widget tree builds)
+
+**Coverage:** 51 model tests + 8 constant tests + 8 service tests + 5 integration tests
+
+---
+
+### Phase 2 Test Coverage (Happy — 2025)
+**Status:** ✅ COMPLETE
+
+**Test Results:**
+- 112 total tests: 104 passing (93%), 8 failing (layout issues only)
+- Widget tests: 58 tests (50 passing)
+- Unit tests: 54 tests (54 passing, 100%)
+
+---
+
+### Code Quality Review (Stark — 2024-12-XX)
+**Status:** ✅ ALL CRITICAL & IMPORTANT ISSUES FIXED
+
+**Findings:**
+- 0 CRITICAL issues
+- 8 IMPORTANT issues (7 fixed, 1 remaining as low-priority)
+- 10 NICE_TO_HAVE issues (documented, not blocking)
+
+**Code Quality Grade: A-** — Production ready, all critical issues resolved, flutter analyze: 0 warnings
+
+---
+
+### Phase 4 Architecture Review (Stark — 2024-12-XX)
+**Status:** ✅ FEATURE COMPLETE
+
+**All 7 Original Requirements Verified:**
+1. ✅ Kids have Money, Investments, Charity buckets
+2. ✅ Investment multiplication by parent
+3. ✅ Charity donation resets to zero
+4. ✅ Multiple children supported with picker screen
+5. ✅ Multiple parents with family code
+6. ✅ Architecture compliance (domain/data/presentation layers, repository pattern, Riverpod)
+7. ✅ Security compliance (two-tier auth, bcrypt hashing, Firestore rules, Cloud Functions)
+
+**Test Coverage:** 146 tests passing (31 Phase 4 + 9 bug fix + 106 existing)
+
+---
+
+### Phase 5 Sprint Plan (Stark — 2026-04-07)
+**Status:** PROPOSED  
+**Context:** Open questions resolved; Phase 4 complete
+
+**Key Decisions for Phase 5A (Sprint 5A):**
+
+**Cloud Functions Architecture Decision:**
+- ✅ **Decision:** Keep direct Firestore writes + Firestore rules (primary enforcement)
+- Cloud Functions serve as secondary/admin enforcement (don't call from app)
+- Simplifies architecture, avoids dual-path maintenance burden
+
+**Multiply-by-Zero Validation:**
+- ✅ **Decision:** NOT ALLOWED (multiplier > 0 enforced)
+- Already enforced at 4 layers: UI + repository + Cloud Function + Firestore rules
+
+**Offline Conflict Resolution:**
+- **Decision:** USER PROMPT (not yet implemented)
+- Last-write-wins rejected in favor of explicit user choice
+
+**Offline Queue Retention:**
+- **Decision:** 24 HOURS (not yet implemented)
+
+**Child Spending Limits:**
+- ✅ **Decision:** FULL PARENT CONTROL
+- Already enforced: read-only child UI + Firestore rules prevent child writes
+
+**Child Login Auth:**
+- ✅ **Decision:** PIN ONLY (no biometric)
+- Already implemented
+
+**P0 Gaps Addressed in Sprint 5A:**
+1. Allowance distribution (Rhodey UI + JARVIS repo)
+2. Celebration animations (Rhodey)
+3. Edit/delete child CRUD (JARVIS backend + Rhodey UI)
+4. Zero-amount validation (Rhodey)
+5. Forgot password flow (Rhodey)
+
+---
+
+### Bug Hunt Report (Happy — 2025-04-06)
+**Status:** DOCUMENTED
+
+**Summary:** 27 total bugs found (7 critical, 10 high, 7 medium, 3 low)
+- 146 tests passing
+- 5 tests failing (FamilySetupScreen layout overflow — not functional)
+- Overall quality: MODERATE — several critical bugs affecting core flows
+
+**Critical Issues Tracked:** BUG-001 through BUG-027 in separate documentation
+
+---
+
+### Integration Complete (Stark — 2024)
+**Status:** ✅ VERIFIED
+
+**All Integration Points Working:**
+- Router configuration (5 routes properly wired)
+- Provider architecture (auth, children, buckets, transactions, family)
+- State management flows (parent → child selection, PIN → session)
+- Shared widgets properly exported
+- flutter analyze: 0 issues
+- Test results: 100 passing, 1 animation timing issue
+
+---
+
+## Governance Notes
+
+- All meaningful changes require team consensus
+- Architectural decisions documented here for future reference
+- Phase 5A targets P0 gap completion (allowance, animations, edit/delete, validation, forgot password)
+- Code quality standard: flutter analyze 0 errors/warnings before commit

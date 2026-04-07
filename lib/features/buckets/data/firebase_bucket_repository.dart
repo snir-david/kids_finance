@@ -80,7 +80,7 @@ class FirebaseBucketRepository implements BucketRepository {
       // Update bucket
       transaction.update(bucketRef, {
         'balance': newBalance,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
 
       // Log transaction
@@ -139,7 +139,7 @@ class FirebaseBucketRepository implements BucketRepository {
       // Update bucket
       transaction.update(bucketRef, {
         'balance': newBalance,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
 
       // Log transaction
@@ -191,7 +191,7 @@ class FirebaseBucketRepository implements BucketRepository {
       // Update bucket (set to 0)
       transaction.update(bucketRef, {
         'balance': 0.0,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
 
       // Log transaction
@@ -249,7 +249,7 @@ class FirebaseBucketRepository implements BucketRepository {
       // Update bucket
       transaction.update(bucketRef, {
         'balance': newBalance,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
 
       // Log transaction
@@ -311,11 +311,130 @@ class FirebaseBucketRepository implements BucketRepository {
       // Update bucket
       transaction.update(bucketRef, {
         'balance': newBalance,
-        'lastUpdatedAt': now.toIso8601String(),
+        'lastUpdatedAt': Timestamp.fromDate(now),
       });
 
       // Log transaction
       transaction.set(transactionRef, txn.toJson()..remove('id'));
+    });
+  }
+
+  @override
+  Future<void> distributeFunds({
+    required String familyId,
+    required String childId,
+    required double moneyAmount,
+    required double investmentAmount,
+    required double charityAmount,
+    required String performedByUid,
+    String? note,
+  }) async {
+    if (moneyAmount < 0 || investmentAmount < 0 || charityAmount < 0) {
+      throw ArgumentError('All amounts must be >= 0');
+    }
+    if (moneyAmount + investmentAmount + charityAmount <= 0) {
+      throw ArgumentError('Total distributed amount must be greater than 0');
+    }
+
+    final childPath = _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId);
+
+    final moneyRef = childPath.collection('buckets').doc('money');
+    final investmentRef = childPath.collection('buckets').doc('investment');
+    final charityRef = childPath.collection('buckets').doc('charity');
+
+    final txnsCollection =
+        _firestore.collection('families').doc(familyId).collection('transactions');
+    final moneyTxnRef = txnsCollection.doc();
+    final investmentTxnRef = txnsCollection.doc();
+    final charityTxnRef = txnsCollection.doc();
+
+    await _firestore.runTransaction((tx) async {
+      final moneySnap = await tx.get(moneyRef);
+      final investmentSnap = await tx.get(investmentRef);
+      final charitySnap = await tx.get(charityRef);
+
+      final moneyPrev = (moneySnap.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+      final investmentPrev = (investmentSnap.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+      final charityPrev = (charitySnap.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+
+      final now = DateTime.now();
+      final timestamp = Timestamp.fromDate(now);
+
+      // Money bucket
+      if (moneyAmount > 0) {
+        final moneyNew = moneyPrev + moneyAmount;
+        tx.update(moneyRef, {'balance': moneyNew, 'lastUpdatedAt': timestamp});
+        tx.set(
+          moneyTxnRef,
+          app_transaction.Transaction(
+            id: moneyTxnRef.id,
+            familyId: familyId,
+            childId: childId,
+            bucketType: BucketType.money,
+            type: app_transaction.TransactionType.distributed,
+            amount: moneyAmount,
+            multiplier: null,
+            previousBalance: moneyPrev,
+            newBalance: moneyNew,
+            note: note,
+            performedByUid: performedByUid,
+            performedAt: now,
+          ).toJson()
+            ..remove('id'),
+        );
+      }
+
+      // Investment bucket
+      if (investmentAmount > 0) {
+        final investmentNew = investmentPrev + investmentAmount;
+        tx.update(investmentRef, {'balance': investmentNew, 'lastUpdatedAt': timestamp});
+        tx.set(
+          investmentTxnRef,
+          app_transaction.Transaction(
+            id: investmentTxnRef.id,
+            familyId: familyId,
+            childId: childId,
+            bucketType: BucketType.investment,
+            type: app_transaction.TransactionType.distributed,
+            amount: investmentAmount,
+            multiplier: null,
+            previousBalance: investmentPrev,
+            newBalance: investmentNew,
+            note: note,
+            performedByUid: performedByUid,
+            performedAt: now,
+          ).toJson()
+            ..remove('id'),
+        );
+      }
+
+      // Charity bucket
+      if (charityAmount > 0) {
+        final charityNew = charityPrev + charityAmount;
+        tx.update(charityRef, {'balance': charityNew, 'lastUpdatedAt': timestamp});
+        tx.set(
+          charityTxnRef,
+          app_transaction.Transaction(
+            id: charityTxnRef.id,
+            familyId: familyId,
+            childId: childId,
+            bucketType: BucketType.charity,
+            type: app_transaction.TransactionType.distributed,
+            amount: charityAmount,
+            multiplier: null,
+            previousBalance: charityPrev,
+            newBalance: charityNew,
+            note: note,
+            performedByUid: performedByUid,
+            performedAt: now,
+          ).toJson()
+            ..remove('id'),
+        );
+      }
     });
   }
 }

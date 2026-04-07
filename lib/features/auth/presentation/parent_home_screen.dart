@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
+import '../../buckets/presentation/widgets/celebration_overlay.dart';
 import '../../buckets/providers/buckets_providers.dart';
 import '../../children/domain/child.dart';
 import '../../children/providers/children_providers.dart';
@@ -363,88 +364,85 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-              // Money bucket
+              // Action bar at the top
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _showDistributeFundsDialog(
+                        context,
+                        familyId,
+                        child,
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _showBucketActionDialog(
+                        context,
+                        familyId,
+                        child,
+                        buckets,
+                        mode: _BucketActionMode.remove,
+                      ),
+                      icon: const Icon(Icons.remove, size: 18),
+                      label: const Text('Remove'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _showEditChildDialog(
+                        context,
+                        familyId,
+                        child,
+                      ),
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Three buckets below - display only
               _BucketCard(
                 emoji: '💰',
                 name: 'Money',
                 balance: moneyBucket.balance,
                 color: AppTheme.moneyColor,
               ),
-              const SizedBox(height: 8),
-              _MoneyActionRow(
-                bucket: moneyBucket,
-                onTapAdd: () => _showMoneyDialog(
-                  context,
-                  familyId,
-                  moneyBucket,
-                  mode: _MoneyMode.add,
-                ),
-                onTapRemove: () => _showMoneyDialog(
-                  context,
-                  familyId,
-                  moneyBucket,
-                  mode: _MoneyMode.remove,
-                ),
-                onTapSet: () => _showMoneyDialog(
-                  context,
-                  familyId,
-                  moneyBucket,
-                  mode: _MoneyMode.set,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Investment bucket
+              const SizedBox(height: 12),
               _BucketCard(
                 emoji: '📈',
                 name: 'Investment',
                 balance: investmentBucket.balance,
                 color: AppTheme.investmentsColor,
               ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      _showMultiplyDialog(context, familyId, investmentBucket),
-                  icon: const Text('×', style: TextStyle(fontSize: 18)),
-                  label: const Text('Multiply Investment'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.investmentsColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Charity bucket
+              const SizedBox(height: 12),
               _BucketCard(
                 emoji: '❤️',
                 name: 'Charity',
                 balance: charityBucket.balance,
                 color: AppTheme.charityColor,
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: charityBucket.balance > 0
-                      ? () =>
-                          _showDonateDialog(context, familyId, charityBucket)
-                      : null,
-                  icon: const Text('❤️'),
-                  label: const Text('Donate to Charity'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.charityColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
               ),
             ],
           ),
@@ -473,18 +471,21 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     );
   }
 
-  void _showMoneyDialog(
+  void _showBucketActionDialog(
     BuildContext context,
     String familyId,
-    Bucket bucket, {
-    required _MoneyMode mode,
-  }) {
+    Child child,
+    List<Bucket> buckets,
+    {required _BucketActionMode mode}
+  ) {
     final authState = ref.read(firebaseAuthStateProvider);
     final uid = authState.value?.uid ?? '';
     showDialog(
       context: context,
-      builder: (ctx) => _MoneyDialog(
-        bucket: bucket,
+      builder: (ctx) => _BucketActionDialog(
+        familyId: familyId,
+        child: child,
+        buckets: buckets,
         mode: mode,
         performedByUid: uid,
         ref: ref,
@@ -492,27 +493,39 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     );
   }
 
-  void _showMultiplyDialog(
-      BuildContext context, String familyId, Bucket bucket) {
+  void _showDistributeFundsDialog(
+    BuildContext context,
+    String familyId,
+    Child child,
+  ) {
     final authState = ref.read(firebaseAuthStateProvider);
     final uid = authState.value?.uid ?? '';
     showDialog(
       context: context,
-      builder: (ctx) =>
-          _MultiplyDialog(bucket: bucket, performedByUid: uid, ref: ref),
+      builder: (ctx) => _DistributeFundsDialog(
+        familyId: familyId,
+        child: child,
+        performedByUid: uid,
+        ref: ref,
+      ),
     );
   }
 
-  void _showDonateDialog(
-      BuildContext context, String familyId, Bucket bucket) {
-    final authState = ref.read(firebaseAuthStateProvider);
-    final uid = authState.value?.uid ?? '';
+  void _showEditChildDialog(
+    BuildContext context,
+    String familyId,
+    Child child,
+  ) {
     showDialog(
       context: context,
-      builder: (ctx) =>
-          _DonateDialog(bucket: bucket, performedByUid: uid, ref: ref),
+      builder: (ctx) => _EditChildDialog(
+        familyId: familyId,
+        child: child,
+        ref: ref,
+      ),
     );
   }
+
 }
 
 // ─── Sub-widgets ──────────────────────────────────────────────────────────────
@@ -579,66 +592,9 @@ class _BucketCard extends StatelessWidget {
   }
 }
 
-class _MoneyActionRow extends StatelessWidget {
-  const _MoneyActionRow({
-    required this.bucket,
-    required this.onTapAdd,
-    required this.onTapRemove,
-    required this.onTapSet,
-  });
+// ─── Bucket action mode ───────────────────────────────────────────────────────
 
-  final Bucket bucket;
-  final VoidCallback onTapAdd;
-  final VoidCallback onTapRemove;
-  final VoidCallback onTapSet;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onTapAdd,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Add'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.moneyColor,
-              side: const BorderSide(color: AppTheme.moneyColor),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: bucket.balance > 0 ? onTapRemove : null,
-            icon: const Icon(Icons.remove, size: 16),
-            label: const Text('Remove'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.orange,
-              side: const BorderSide(color: Colors.orange),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onTapSet,
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Set'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.primaryColor,
-              side: const BorderSide(color: AppTheme.primaryColor),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Money mode ───────────────────────────────────────────────────────────────
-
-enum _MoneyMode { add, remove, set }
+enum _BucketActionMode { add, remove }
 
 // ─── Firestore error → human-readable message ─────────────────────────────────
 /// Returns a user-friendly error string for any Firestore / platform failure.
@@ -849,66 +805,81 @@ class _AddChildDialogState extends State<_AddChildDialog> {
   }
 }
 
-// ─── Money Dialog (add / remove / set) ───────────────────────────────────────
+// ─── Bucket Action Dialog (unified add/remove for all buckets) ───────────────
 
-class _MoneyDialog extends StatefulWidget {
-  const _MoneyDialog({
-    required this.bucket,
+class _BucketActionDialog extends StatefulWidget {
+  const _BucketActionDialog({
+    required this.familyId,
+    required this.child,
+    required this.buckets,
     required this.mode,
     required this.performedByUid,
     required this.ref,
   });
-  final Bucket bucket;
-  final _MoneyMode mode;
+  final String familyId;
+  final Child child;
+  final List<Bucket> buckets;
+  final _BucketActionMode mode;
   final String performedByUid;
   final WidgetRef ref;
 
   @override
-  State<_MoneyDialog> createState() => _MoneyDialogState();
+  State<_BucketActionDialog> createState() => _BucketActionDialogState();
 }
 
-class _MoneyDialogState extends State<_MoneyDialog> {
-  final _controller = TextEditingController();
+class _BucketActionDialogState extends State<_BucketActionDialog> {
+  final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  BucketType _selectedBucket = BucketType.money; // Default to Money
   bool _isLoading = false;
   String? _error;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _amountController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
+  Bucket get _currentBucket {
+    return widget.buckets.firstWhere(
+      (b) => b.type == _selectedBucket,
+      orElse: () => _createEmptyBucket(
+        _selectedBucket,
+        widget.child.id,
+        widget.familyId,
+      ),
+    );
+  }
+
   String get _title {
     switch (widget.mode) {
-      case _MoneyMode.add:
-        return 'Add Money';
-      case _MoneyMode.remove:
-        return 'Remove Money';
-      case _MoneyMode.set:
-        return 'Set Money';
+      case _BucketActionMode.add:
+        return 'Add to Bucket';
+      case _BucketActionMode.remove:
+        return 'Remove from Bucket';
     }
   }
 
   String get _buttonLabel {
     switch (widget.mode) {
-      case _MoneyMode.add:
+      case _BucketActionMode.add:
         return 'Add';
-      case _MoneyMode.remove:
+      case _BucketActionMode.remove:
         return 'Remove';
-      case _MoneyMode.set:
-        return 'Set';
     }
   }
 
   Future<void> _submit() async {
-    final amount = double.tryParse(_controller.text);
-    if (amount == null || amount < 0) {
-      setState(() => _error = 'Enter a valid amount');
+    final amount = double.tryParse(_amountController.text);
+    if (amount == null || amount <= 0) {
+      setState(() => _error = 'Amount must be greater than 0');
       return;
     }
-    if (widget.mode == _MoneyMode.remove && amount > widget.bucket.balance) {
+
+    final currentBucket = _currentBucket;
+    
+    if (widget.mode == _BucketActionMode.remove && amount > currentBucket.balance) {
       setState(() => _error = "Can't remove more than current balance");
       return;
     }
@@ -920,40 +891,90 @@ class _MoneyDialogState extends State<_MoneyDialog> {
 
     try {
       final repo = widget.ref.read(bucketRepositoryProvider);
-      final note =
-          _noteController.text.trim().isEmpty ? null : _noteController.text.trim();
+      final note = _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim();
 
-      switch (widget.mode) {
-        case _MoneyMode.add:
-          await repo.addMoney(
-            childId: widget.bucket.childId,
-            familyId: widget.bucket.familyId,
-            amount: amount,
-            performedByUid: widget.performedByUid,
-            note: note,
-          );
+      switch (_selectedBucket) {
+        case BucketType.money:
+          if (widget.mode == _BucketActionMode.add) {
+            await repo.addMoney(
+              childId: widget.child.id,
+              familyId: widget.familyId,
+              amount: amount,
+              performedByUid: widget.performedByUid,
+              note: note,
+            );
+          } else {
+            await repo.removeMoney(
+              childId: widget.child.id,
+              familyId: widget.familyId,
+              amount: amount,
+              performedByUid: widget.performedByUid,
+              note: note,
+            );
+          }
           break;
-        case _MoneyMode.remove:
-          await repo.removeMoney(
-            childId: widget.bucket.childId,
-            familyId: widget.bucket.familyId,
-            amount: amount,
-            performedByUid: widget.performedByUid,
-            note: note,
-          );
+
+        case BucketType.investment:
+          // Investment uses multiply, not direct add/remove
+          // For Add: use multiplier based on current balance
+          // For Remove: not supported - show error
+          if (widget.mode == _BucketActionMode.add) {
+            if (currentBucket.balance == 0) {
+              setState(() => _error = 'Investment is empty. Add money first, then multiply it.');
+              setState(() => _isLoading = false);
+              return;
+            }
+            // Calculate multiplier: (current + amount) / current
+            final multiplier = (currentBucket.balance + amount) / currentBucket.balance;
+            await repo.multiplyInvestment(
+              childId: widget.child.id,
+              familyId: widget.familyId,
+              multiplier: multiplier,
+              performedByUid: widget.performedByUid,
+              note: note ?? 'Added \$${amount.toStringAsFixed(2)} via multiplier',
+            );
+          } else {
+            setState(() => _error = 'Investment can only be multiplied, not removed directly');
+            setState(() => _isLoading = false);
+            return;
+          }
           break;
-        case _MoneyMode.set:
-          await repo.setMoneyBalance(
-            childId: widget.bucket.childId,
-            familyId: widget.bucket.familyId,
-            newBalance: amount,
-            performedByUid: widget.performedByUid,
-            note: note,
-          );
+
+        case BucketType.charity:
+          // Charity: can add (via distribute or money transfer), but removing not supported
+          if (widget.mode == _BucketActionMode.add) {
+            // Use distributeFunds with charity amount only
+            await repo.distributeFunds(
+              familyId: widget.familyId,
+              childId: widget.child.id,
+              moneyAmount: 0,
+              investmentAmount: 0,
+              charityAmount: amount,
+              performedByUid: widget.performedByUid,
+              note: note,
+            );
+          } else {
+            setState(() => _error = 'Charity can only be donated (which resets to zero), not removed partially');
+            setState(() => _isLoading = false);
+            return;
+          }
           break;
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+        // Show celebration for add operations
+        if (widget.mode == _BucketActionMode.add) {
+          final celebrationType = switch (_selectedBucket) {
+            BucketType.money => CelebrationType.money,
+            BucketType.investment => CelebrationType.investment,
+            BucketType.charity => CelebrationType.charity,
+          };
+          _showCelebration(context, celebrationType);
+        }
+      }
     } catch (e) {
       final msg = _firestoreErrorMessage(e);
       if (mounted) {
@@ -972,45 +993,93 @@ class _MoneyDialogState extends State<_MoneyDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final prefixText =
-        widget.mode == _MoneyMode.set ? '\$' : (widget.mode == _MoneyMode.add ? '+\$' : '-\$');
+    final currentBucket = _currentBucket;
+    final amount = double.tryParse(_amountController.text);
+    final isAmountInvalid = amount == null || amount <= 0;
 
     return AlertDialog(
       title: Text(_title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Current balance: \$${widget.bucket.balance.toStringAsFixed(2)}',
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            autofocus: true,
-            decoration: InputDecoration(
-              prefixText: prefixText,
-              hintText: '0.00',
-              border: const OutlineInputBorder(),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Bucket selector
+            const Text(
+              'Which bucket?',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _noteController,
-            decoration: const InputDecoration(
-              labelText: 'Note (optional)',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 8),
+            SegmentedButton<BucketType>(
+              segments: const [
+                ButtonSegment(
+                  value: BucketType.money,
+                  label: Text('💰 Money'),
+                ),
+                ButtonSegment(
+                  value: BucketType.investment,
+                  label: Text('📈 Investment'),
+                ),
+                ButtonSegment(
+                  value: BucketType.charity,
+                  label: Text('❤️ Charity'),
+                ),
+              ],
+              selected: {_selectedBucket},
+              onSelectionChanged: (Set<BucketType> selected) {
+                setState(() {
+                  _selectedBucket = selected.first;
+                  _error = null; // Clear error when bucket changes
+                });
+              },
             ),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(_error!,
-                style: const TextStyle(color: Colors.red, fontSize: 13)),
+            const SizedBox(height: 16),
+
+            // Current balance
+            Text(
+              'Current balance: \$${currentBucket.balance.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Amount input
+            TextField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                prefixText: widget.mode == _BucketActionMode.add ? '+\$' : '-\$',
+                hintText: '0.00',
+                labelText: 'Amount',
+                border: const OutlineInputBorder(),
+                helperText: isAmountInvalid ? 'Amount must be greater than 0' : null,
+                helperStyle: TextStyle(color: isAmountInvalid ? Colors.red : null),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Note field
+            TextField(
+              controller: _noteController,
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -1018,16 +1087,21 @@ class _MoneyDialogState extends State<_MoneyDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isLoading ? null : _submit,
+          onPressed: (_isLoading || isAmountInvalid) ? null : _submit,
           style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.moneyColor,
+            backgroundColor: widget.mode == _BucketActionMode.add
+                ? AppTheme.primaryColor
+                : Colors.orange,
           ),
           child: _isLoading
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : Text(_buttonLabel),
         ),
       ],
@@ -1035,39 +1109,67 @@ class _MoneyDialogState extends State<_MoneyDialog> {
   }
 }
 
-// ─── Multiply Dialog ──────────────────────────────────────────────────────────
+// ─── Distribute Funds Dialog ──────────────────────────────────────────────────
 
-class _MultiplyDialog extends StatefulWidget {
-  const _MultiplyDialog({
-    required this.bucket,
+class _DistributeFundsDialog extends StatefulWidget {
+  const _DistributeFundsDialog({
+    required this.familyId,
+    required this.child,
     required this.performedByUid,
     required this.ref,
   });
-  final Bucket bucket;
+  final String familyId;
+  final Child child;
   final String performedByUid;
   final WidgetRef ref;
 
   @override
-  State<_MultiplyDialog> createState() => _MultiplyDialogState();
+  State<_DistributeFundsDialog> createState() => _DistributeFundsDialogState();
 }
 
-class _MultiplyDialogState extends State<_MultiplyDialog> {
-  final _controller = TextEditingController(text: '2');
+class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
+  final _totalController = TextEditingController();
+  final _moneyController = TextEditingController();
+  final _investmentController = TextEditingController();
+  final _charityController = TextEditingController();
   final _noteController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _totalController.dispose();
+    _moneyController.dispose();
+    _investmentController.dispose();
+    _charityController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
+  double get _totalAmount => double.tryParse(_totalController.text) ?? 0.0;
+  double get _moneyAmount => double.tryParse(_moneyController.text) ?? 0.0;
+  double get _investmentAmount => double.tryParse(_investmentController.text) ?? 0.0;
+  double get _charityAmount => double.tryParse(_charityController.text) ?? 0.0;
+  double get _allocatedTotal => _moneyAmount + _investmentAmount + _charityAmount;
+  double get _remaining => _totalAmount - _allocatedTotal;
+
+  void _updateFields() {
+    setState(() {});
+  }
+
   Future<void> _submit() async {
-    final multiplier = double.tryParse(_controller.text);
-    if (multiplier == null || multiplier <= 0) {
-      setState(() => _error = 'Multiplier must be greater than 0');
+    if (_totalAmount <= 0) {
+      setState(() => _error = 'Total amount must be greater than 0');
+      return;
+    }
+
+    if (_moneyAmount < 0 || _investmentAmount < 0 || _charityAmount < 0) {
+      setState(() => _error = 'Individual amounts cannot be negative');
+      return;
+    }
+
+    if (_allocatedTotal != _totalAmount) {
+      setState(() => _error = 'Allocated amounts must equal total (\$${_remaining.abs().toStringAsFixed(2)} ${_remaining > 0 ? 'remaining' : 'over'})');
       return;
     }
 
@@ -1078,16 +1180,24 @@ class _MultiplyDialogState extends State<_MultiplyDialog> {
 
     try {
       final repo = widget.ref.read(bucketRepositoryProvider);
-      final note =
-          _noteController.text.trim().isEmpty ? null : _noteController.text.trim();
-      await repo.multiplyInvestment(
-        childId: widget.bucket.childId,
-        familyId: widget.bucket.familyId,
-        multiplier: multiplier,
+      final note = _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim();
+
+      await repo.distributeFunds(
+        familyId: widget.familyId,
+        childId: widget.child.id,
+        moneyAmount: _moneyAmount,
+        investmentAmount: _investmentAmount,
+        charityAmount: _charityAmount,
         performedByUid: widget.performedByUid,
         note: note,
       );
-      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Navigator.pop(context);
+        _showCelebration(context, CelebrationType.money);
+      }
     } catch (e) {
       final msg = _firestoreErrorMessage(e);
       if (mounted) {
@@ -1106,74 +1216,145 @@ class _MultiplyDialogState extends State<_MultiplyDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final multiplier = double.tryParse(_controller.text) ?? 1.0;
-    final newBalance = widget.bucket.balance * multiplier;
+    final isValid = _totalAmount > 0 && 
+                    _allocatedTotal == _totalAmount && 
+                    _moneyAmount >= 0 && 
+                    _investmentAmount >= 0 && 
+                    _charityAmount >= 0;
 
     return AlertDialog(
-      title: const Text('Multiply Investment'),
-      content: StatefulBuilder(
-        builder: (ctx, setLocal) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Current: \$${widget.bucket.balance.toStringAsFixed(2)}',
-                style: TextStyle(color: Colors.grey.shade600),
+      title: Text('Add Allowance for ${widget.child.displayName}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Total Amount',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _totalController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              onChanged: (_) => _updateFields(),
+              decoration: const InputDecoration(
+                prefixText: '\$',
+                hintText: '0.00',
+                labelText: 'Total to distribute',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _controller,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                autofocus: true,
-                onChanged: (_) => setLocal(() {}),
-                decoration: const InputDecoration(
-                  prefixText: '×',
-                  hintText: '2',
-                  border: OutlineInputBorder(),
-                  helperText: 'e.g. 2 = double, 1.5 = 50% more',
+            ),
+            const SizedBox(height: 20),
+
+            const Text(
+              'Split Across Buckets',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+
+            // Money bucket
+            TextField(
+              controller: _moneyController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => _updateFields(),
+              decoration: const InputDecoration(
+                prefixText: '\$',
+                hintText: '0.00',
+                labelText: '💰 Money',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Investment bucket
+            TextField(
+              controller: _investmentController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => _updateFields(),
+              decoration: const InputDecoration(
+                prefixText: '\$',
+                hintText: '0.00',
+                labelText: '📈 Investment',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Charity bucket
+            TextField(
+              controller: _charityController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onChanged: (_) => _updateFields(),
+              decoration: const InputDecoration(
+                prefixText: '\$',
+                hintText: '0.00',
+                labelText: '❤️ Charity',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Remaining indicator
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _remaining == 0 
+                    ? Colors.green.shade50 
+                    : _remaining > 0 
+                        ? Colors.orange.shade50 
+                        : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _remaining == 0 
+                      ? Colors.green.shade300 
+                      : _remaining > 0 
+                          ? Colors.orange.shade300 
+                          : Colors.red.shade300,
                 ),
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.investmentsColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Text('📈 Result:',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(width: 8),
-                    Text(
-                      '\$${newBalance.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.investmentsColor,
-                        fontSize: 16,
-                      ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Remaining:',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    '\$${_remaining.abs().toStringAsFixed(2)} ${_remaining > 0 ? 'left' : _remaining < 0 ? 'over' : '✓'}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: _remaining == 0 
+                          ? Colors.green.shade700 
+                          : _remaining > 0 
+                              ? Colors.orange.shade700 
+                              : Colors.red.shade700,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 16),
+
+            // Note field
+            TextField(
+              controller: _noteController,
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            if (_error != null) ...[
               const SizedBox(height: 12),
-              TextField(
-                controller: _noteController,
-                decoration: const InputDecoration(
-                  labelText: 'Note (optional)',
-                  border: OutlineInputBorder(),
-                ),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
               ),
-              if (_error != null) ...[
-                const SizedBox(height: 10),
-                Text(_error!,
-                    style: const TextStyle(color: Colors.red, fontSize: 13)),
-              ],
             ],
-          );
-        },
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -1181,58 +1362,183 @@ class _MultiplyDialogState extends State<_MultiplyDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isLoading ? null : _submit,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.investmentsColor,
-          ),
+          onPressed: (_isLoading || !isValid) ? null : _submit,
           child: _isLoading
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const Text('Multiply'),
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Distribute'),
         ),
       ],
     );
   }
 }
 
-// ─── Donate Dialog ────────────────────────────────────────────────────────────
+// ─── Edit Child Dialog ────────────────────────────────────────────────────────
 
-class _DonateDialog extends StatefulWidget {
-  const _DonateDialog({
-    required this.bucket,
-    required this.performedByUid,
+class _EditChildDialog extends StatefulWidget {
+  const _EditChildDialog({
+    required this.familyId,
+    required this.child,
     required this.ref,
   });
-  final Bucket bucket;
-  final String performedByUid;
+  final String familyId;
+  final Child child;
   final WidgetRef ref;
 
   @override
-  State<_DonateDialog> createState() => _DonateDialogState();
+  State<_EditChildDialog> createState() => _EditChildDialogState();
 }
 
-class _DonateDialogState extends State<_DonateDialog> {
+class _EditChildDialogState extends State<_EditChildDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _emojiController;
+  final _newPinController = TextEditingController();
+  final _confirmPinController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.child.displayName);
+    _emojiController = TextEditingController(text: widget.child.avatarEmoji);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emojiController.dispose();
+    _newPinController.dispose();
+    _confirmPinController.dispose();
+    super.dispose();
+  }
+
   Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final emoji = _emojiController.text.trim();
+    final newPin = _newPinController.text.trim();
+    final confirmPin = _confirmPinController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() => _error = 'Please enter a name');
+      return;
+    }
+
+    if (emoji.isEmpty) {
+      setState(() => _error = 'Please enter an emoji');
+      return;
+    }
+
+    // PIN validation only if they're trying to change it
+    if (newPin.isNotEmpty || confirmPin.isNotEmpty) {
+      if (newPin.length < _kMinPinLength || newPin.length > _kMaxPinLength || !RegExp(r'^\d+$').hasMatch(newPin)) {
+        setState(() => _error = 'PIN must be $_kMinPinLength–$_kMaxPinLength digits');
+        return;
+      }
+      if (newPin != confirmPin) {
+        setState(() => _error = 'PINs do not match');
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final repo = widget.ref.read(bucketRepositoryProvider);
-      await repo.donateCharity(
-        childId: widget.bucket.childId,
-        familyId: widget.bucket.familyId,
-        performedByUid: widget.performedByUid,
-        note: 'Donated by parent',
+      final repo = widget.ref.read(childRepositoryProvider);
+      
+      await repo.updateChild(
+        childId: widget.child.id,
+        familyId: widget.familyId,
+        name: name != widget.child.displayName ? name : null,
+        avatarEmoji: emoji != widget.child.avatarEmoji ? emoji : null,
+        newPin: newPin.isNotEmpty ? newPin : null,
       );
-      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Changes saved'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      final msg = _firestoreErrorMessage(e);
+      if (mounted) {
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showArchiveConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Archive Child?'),
+        content: Text(
+          "Are you sure? ${widget.child.displayName}'s data will be preserved but they'll be removed from your family.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _archiveChild();
+    }
+  }
+
+  Future<void> _archiveChild() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final repo = widget.ref.read(childRepositoryProvider);
+      await repo.archiveChild(
+        familyId: widget.familyId,
+        childId: widget.child.id,
+      );
+
+      if (mounted) {
+        // Close the edit dialog
+        Navigator.pop(context);
+        // Show confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${widget.child.displayName} has been archived'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
       final msg = _firestoreErrorMessage(e);
       if (mounted) {
@@ -1252,48 +1558,88 @@ class _DonateDialogState extends State<_DonateDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Donate to Charity'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'This will donate all charity funds:',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.charityColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+      title: const Text('Edit Child'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Display Name',
+                border: OutlineInputBorder(),
+              ),
             ),
-            child: Row(
-              children: [
-                const Text('❤️', style: TextStyle(fontSize: 32)),
-                const SizedBox(width: 12),
-                Text(
-                  '\$${widget.bucket.balance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.charityColor,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _emojiController,
+              decoration: const InputDecoration(
+                labelText: 'Avatar Emoji',
+                border: OutlineInputBorder(),
+                hintText: '🦁',
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'The charity bucket will be reset to \$0.00.',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(_error!,
-                style: const TextStyle(color: Colors.red, fontSize: 13)),
+            const SizedBox(height: 16),
+
+            const Divider(),
+            const SizedBox(height: 8),
+            const Text(
+              'Change PIN (optional)',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+
+            TextField(
+              controller: _newPinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: _kMaxPinLength,
+              decoration: InputDecoration(
+                labelText: 'New PIN ($_kMinPinLength–$_kMaxPinLength digits)',
+                border: const OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            TextField(
+              controller: _confirmPinController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: _kMaxPinLength,
+              decoration: const InputDecoration(
+                labelText: 'Confirm New PIN',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+
+            // Archive button
+            TextButton.icon(
+              onPressed: _isLoading ? null : _showArchiveConfirmation,
+              icon: const Icon(Icons.archive_outlined, color: Colors.red),
+              label: const Text(
+                'Archive Child',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -1302,16 +1648,16 @@ class _DonateDialogState extends State<_DonateDialog> {
         ),
         FilledButton(
           onPressed: _isLoading ? null : _submit,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.charityColor,
-          ),
           child: _isLoading
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const Text('Donate ❤️'),
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
         ),
       ],
     );
@@ -1381,6 +1727,22 @@ void _showFamilySettingsDialog(BuildContext context, WidgetRef ref, String famil
           child: const Text('Close'),
         ),
       ],
+    ),
+  );
+}
+
+// ─── Celebration Overlay Helper ────────────────────────────────────────────────
+
+void _showCelebration(BuildContext context, CelebrationType type) {
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      opaque: false,
+      barrierDismissible: true,
+      barrierColor: Colors.transparent,
+      pageBuilder: (ctx, _, __) => CelebrationOverlay(
+        type: type,
+        onComplete: () => Navigator.of(ctx).pop(),
+      ),
     ),
   );
 }

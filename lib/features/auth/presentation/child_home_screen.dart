@@ -390,6 +390,8 @@ class ChildHomeScreen extends ConsumerWidget {
         '📈 Savings ×${tx.multiplier?.toStringAsFixed(1) ?? '1'} = \$${tx.newBalance.toStringAsFixed(2)}',
       app_transaction.TransactionType.charityDonated =>
         '❤️ Donated \$${tx.previousBalance.toStringAsFixed(2)} to charity!',
+      app_transaction.TransactionType.distributed =>
+        '🎁 Allowance split: \$${tx.amount.toStringAsFixed(2)} to ${tx.bucketType.name}',
     };
   }
 

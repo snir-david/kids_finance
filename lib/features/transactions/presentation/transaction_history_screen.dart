@@ -193,6 +193,12 @@ class _TransactionTile extends StatelessWidget {
           label: 'Donated to charity',
           color: AppTheme.charityColor,
         );
+      case app_transaction.TransactionType.distributed:
+        return _TxInfo(
+          emoji: '🎁',
+          label: 'Allowance distributed',
+          color: AppTheme.moneyColor,
+        );
     }
   }
 }

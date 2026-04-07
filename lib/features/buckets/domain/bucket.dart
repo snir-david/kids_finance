@@ -52,14 +52,20 @@ class Bucket extends Equatable {
     );
   }
 
-  factory Bucket.fromJson(Map<String, dynamic> json) => Bucket(
-        id: json['id'] as String,
-        childId: json['childId'] as String,
-        familyId: json['familyId'] as String,
-        type: BucketType.fromJson(json['type'] as String),
-        balance: (json['balance'] as num).toDouble(),
-        lastUpdatedAt: (json['lastUpdatedAt'] as Timestamp).toDate(),
-      );
+  factory Bucket.fromJson(Map<String, dynamic> json) {
+    final rawLastUpdated = json['lastUpdatedAt'];
+    final lastUpdatedAt = rawLastUpdated is Timestamp
+        ? rawLastUpdated.toDate()
+        : DateTime.parse(rawLastUpdated as String);
+    return Bucket(
+      id: json['id'] as String,
+      childId: json['childId'] as String,
+      familyId: json['familyId'] as String,
+      type: BucketType.fromJson(json['type'] as String),
+      balance: (json['balance'] as num).toDouble(),
+      lastUpdatedAt: lastUpdatedAt,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,

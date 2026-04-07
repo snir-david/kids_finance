@@ -11,6 +11,7 @@ class Child extends Equatable {
     required this.pinHash,
     this.sessionExpiresAt,
     required this.createdAt,
+    this.archived = false,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class Child extends Equatable {
   final String pinHash;
   final DateTime? sessionExpiresAt;
   final DateTime createdAt;
+  final bool archived;
 
   Child copyWith({
     String? id,
@@ -29,6 +31,7 @@ class Child extends Equatable {
     String? pinHash,
     DateTime? sessionExpiresAt,
     DateTime? createdAt,
+    bool? archived,
   }) {
     return Child(
       id: id ?? this.id,
@@ -38,20 +41,32 @@ class Child extends Equatable {
       pinHash: pinHash ?? this.pinHash,
       sessionExpiresAt: sessionExpiresAt ?? this.sessionExpiresAt,
       createdAt: createdAt ?? this.createdAt,
+      archived: archived ?? this.archived,
     );
   }
 
-  factory Child.fromJson(Map<String, dynamic> json) => Child(
-        id: json['id'] as String,
-        familyId: json['familyId'] as String,
-        displayName: json['displayName'] as String,
-        avatarEmoji: json['avatarEmoji'] as String,
-        pinHash: json['pinHash'] as String,
-        sessionExpiresAt: json['sessionExpiresAt'] != null
-            ? (json['sessionExpiresAt'] as Timestamp).toDate()
-            : null,
-        createdAt: (json['createdAt'] as Timestamp).toDate(),
-      );
+  factory Child.fromJson(Map<String, dynamic> json) {
+    final rawSessionExpiry = json['sessionExpiresAt'];
+    final sessionExpiresAt = rawSessionExpiry == null
+        ? null
+        : rawSessionExpiry is Timestamp
+            ? rawSessionExpiry.toDate()
+            : DateTime.parse(rawSessionExpiry as String);
+    final rawCreatedAt = json['createdAt'];
+    final createdAt = rawCreatedAt is Timestamp
+        ? rawCreatedAt.toDate()
+        : DateTime.parse(rawCreatedAt as String);
+    return Child(
+      id: json['id'] as String,
+      familyId: json['familyId'] as String,
+      displayName: json['displayName'] as String,
+      avatarEmoji: json['avatarEmoji'] as String,
+      pinHash: json['pinHash'] as String,
+      sessionExpiresAt: sessionExpiresAt,
+      createdAt: createdAt,
+      archived: json['archived'] as bool? ?? false,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -63,6 +78,7 @@ class Child extends Equatable {
             ? Timestamp.fromDate(sessionExpiresAt!)
             : null,
         'createdAt': Timestamp.fromDate(createdAt),
+        'archived': archived,
       };
 
   @override
@@ -74,5 +90,6 @@ class Child extends Equatable {
         pinHash,
         sessionExpiresAt,
         createdAt,
+        archived,
       ];
 }

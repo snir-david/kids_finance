@@ -138,4 +138,30 @@
 - **Orchestration Logs:** `.squad/orchestration-log/2026-04-06T16-48-21Z-*.md` (9 logs)
 - **Session Log:** `.squad/log/2026-04-06T16-48-21Z-phase4-complete.md`
 
+### 2026-04-07: Phase 5 Planning — Full Gap Analysis
+- **Status:** ✅ SPRINT PLAN DELIVERED
+- **Open Questions Resolved (5):**
+  1. Multiply by zero: NOT ALLOWED (multiplier > 0) — already enforced at UI + repo + Cloud Function + Firestore rules ✅
+  2. Offline conflict resolution: USER PROMPT — NOT yet implemented
+  3. Offline queue retention: 24 HOURS — NOT yet implemented
+  4. Child spending: FULL PARENT CONTROL — enforced via read-only child UI + Firestore rules ✅
+  5. Child auth: PIN ONLY — already implemented, no biometric ✅
+- **Codebase Audit Results:**
+  - 42 Dart files in lib/, 18 test files, 1 Cloud Functions file
+  - Full happy path works: auth → family → children → buckets → transactions
+  - Multiply-by-zero already validated at 4 layers (UI, repo, CF, rules)
+  - Child UI is already read-only (full parent control satisfied)
+  - PIN-only auth already implemented (no biometric code exists)
+- **Key Gaps Found (5 P0):**
+  1. No allowance distribution/split flow (core financial literacy feature)
+  2. No offline sync system (no queue, no conflict UI, no 24hr retention)
+  3. No celebration animations (flutter_animate in pubspec but unused)
+  4. No edit/delete child CRUD operations
+  5. Cloud Functions exist but are not called by Flutter app (dead code)
+- **Architecture Decision:**
+  - Direct Firestore writes + Firestore rules = primary enforcement
+  - Cloud Functions = secondary/admin enforcement (keep but don't call from app)
+  - This avoids dual-path maintenance burden
+- **Sprint Plan:** 20 work items across 4 sprints (5A–5D), targeting 50+ tests
+- **Output:** `.squad/decisions/inbox/stark-next-phase-plan.md`
 
