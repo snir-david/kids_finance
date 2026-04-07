@@ -14,6 +14,7 @@ import '../../buckets/providers/buckets_providers.dart';
 import '../../children/domain/child.dart';
 import '../../children/providers/children_providers.dart';
 import '../../family/providers/family_providers.dart';
+import '../../goals/presentation/providers/goals_provider.dart';
 import '../providers/auth_providers.dart';
 
 /// Notifier for selected child ID in parent dashboard
@@ -548,6 +549,9 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                   ),
                 ),
               ),
+
+              // Compact savings goals summary (parent read-only view)
+              _buildGoalsSummary(context, familyId, child, moneyBucket.balance),
             ],
           ),
         );
@@ -563,6 +567,115 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           ],
         ),
       ),
+    );
+  }
+
+  // ─── Savings Goals Summary (parent read-only) ─────────────────────────────
+
+  Widget _buildGoalsSummary(
+    BuildContext context,
+    String familyId,
+    Child child,
+    double moneyBalance,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final goalsAsync = ref.watch(
+      goalsProvider((familyId: familyId, childId: child.id)),
+    );
+
+    return goalsAsync.when(
+      data: (goals) {
+        final activeGoals = goals
+            .where((g) => g.isActive && !g.isCompleted)
+            .toList();
+        if (activeGoals.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('🎯', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.savingsGoals,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: activeGoals.map((goal) {
+                  final progress = goal.progressPercent(moneyBalance);
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: Colors.green.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🎯',
+                            style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              goal.name,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 80,
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                        Colors.green),
+                                backgroundColor:
+                                    Colors.green.withValues(alpha: 0.2),
+                                minHeight: 4,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            Text(
+                              '${(progress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

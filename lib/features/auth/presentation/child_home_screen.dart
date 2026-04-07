@@ -7,8 +7,14 @@ import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
 import '../../buckets/domain/bucket_repository.dart';
 import '../../buckets/presentation/widgets/bucket_action_sheets.dart';
+import '../../buckets/presentation/widgets/celebration_overlay.dart';
 import '../../buckets/providers/buckets_providers.dart';
 import '../../children/providers/children_providers.dart';
+import '../../goals/data/models/goal_model.dart';
+import '../../goals/data/repositories/goal_repository_provider.dart';
+import '../../goals/presentation/providers/goals_provider.dart';
+import '../../goals/presentation/widgets/add_goal_dialog.dart';
+import '../../goals/presentation/widgets/goal_card.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/auth_providers.dart';
@@ -25,11 +31,20 @@ Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
   );
 }
 
-class ChildHomeScreen extends ConsumerWidget {
+class ChildHomeScreen extends ConsumerStatefulWidget {
   const ChildHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChildHomeScreen> createState() => _ChildHomeScreenState();
+}
+
+class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
+  /// Tracks which completed goals have already triggered a celebration,
+  /// to avoid showing the overlay more than once per goal.
+  final _celebratedGoalIds = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
     // Session expiry check — redirect to PIN if the 24-hour session has lapsed.
     final sessionState = ref.watch(childSessionValidProvider);
     if (sessionState == SessionState.expired) {
@@ -107,7 +122,7 @@ class ChildHomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                body: _buildDashboard(context, ref, familyId, child.id, child.displayName),
+                body: _buildDashboard(context, familyId, child.id, child.displayName),
               ),
             );
           },
@@ -130,7 +145,6 @@ class ChildHomeScreen extends ConsumerWidget {
 
   Widget _buildDashboard(
     BuildContext context,
-    WidgetRef ref,
     String familyId,
     String childId,
     String childName,
@@ -277,6 +291,13 @@ class ChildHomeScreen extends ConsumerWidget {
                       loading: () => const SizedBox.shrink(),
                       error: (_, __) => const SizedBox.shrink(),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // Savings Goals section
+                    _buildGoalsSection(context, familyId, childId, moneyBucket.balance),
+
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -547,7 +568,145 @@ class ChildHomeScreen extends ConsumerWidget {
       return '${date.month}/${date.day}/${date.year}';
     }
   }
+
+  // ─── Savings Goals ────────────────────────────────────────────────────────
+
+  Widget _buildGoalsSection(
+    BuildContext context,
+    String familyId,
+    String childId,
+    double moneyBalance,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final goalsAsync = ref.watch(
+      goalsProvider((familyId: familyId, childId: childId)),
+    );
+    final goalRepo = ref.read(goalRepositoryProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header with "+" button
+        Row(
+          children: [
+            const Text('🎯', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.savingsGoals,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              tooltip: l10n.addGoal,
+              onPressed: () => _showAddGoalDialog(
+                context,
+                familyId,
+                childId,
+                goalRepo,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        goalsAsync.when(
+          data: (goals) {
+            final activeGoals =
+                goals.where((g) => g.isActive).toList();
+            _checkAndCelebrate(context, activeGoals);
+            if (activeGoals.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    l10n.noGoalsYet,
+                    style:
+                        Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: activeGoals
+                  .map(
+                    (goal) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: GoalCard(
+                        goal: goal,
+                        currentBalance: moneyBalance,
+                        onTap: () {/* future: edit / delete */},
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+          loading: () =>
+              const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  void _showAddGoalDialog(
+    BuildContext context,
+    String familyId,
+    String childId,
+    dynamic goalRepo,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AddGoalDialog(
+        onSave: (name, targetAmount) async {
+          await goalRepo.createGoal(
+            familyId,
+            childId,
+            name,
+            targetAmount,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Schedules a celebration overlay for each newly-completed goal.
+  /// Mutates [_celebratedGoalIds] to prevent duplicate shows.
+  void _checkAndCelebrate(BuildContext context, List<Goal> goals) {
+    for (final goal in goals) {
+      if (goal.isCompleted && !_celebratedGoalIds.contains(goal.id)) {
+        _celebratedGoalIds.add(goal.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showGoalCelebration(context);
+        });
+      }
+    }
+  }
+
+  void _showGoalCelebration(BuildContext context) {
+    final overlayState = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => CelebrationOverlay(
+        type: CelebrationType.investment,
+        onComplete: () {
+          if (entry.mounted) entry.remove();
+        },
+      ),
+    );
+    overlayState.insert(entry);
+    // Auto-dismiss after 2 seconds regardless of animation duration.
+    Future.delayed(const Duration(seconds: 2), () {
+      if (entry.mounted) entry.remove();
+    });
+  }
 }
-
-
 

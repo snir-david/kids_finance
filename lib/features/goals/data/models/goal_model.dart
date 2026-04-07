@@ -18,6 +18,11 @@ class Goal extends Equatable {
   final DateTime? completedAt;
   final bool isActive;
 
+  bool get isCompleted => completedAt != null;
+
+  double progressPercent(double currentBalance) =>
+      (currentBalance / targetAmount).clamp(0.0, 1.0);
+
   factory Goal.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     final rawCreated = data['createdAt'];

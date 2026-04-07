@@ -152,6 +152,17 @@ class AppLocalizations {
           : 'Share this Family Code with another parent.';
   String get addToGetStarted => isHebrew ? 'הוסף את הילד הראשון כדי להתחיל' : 'Add your first child to get started';
 
+  // ─── Savings Goals ────────────────────────────────────────────────────────
+  String get savingsGoals => isHebrew ? 'יעדי חיסכון' : 'Savings Goals';
+  String get addGoal => isHebrew ? 'הוסף יעד' : 'Add Goal';
+  String get goalName => isHebrew ? 'שם יעד' : 'Goal Name';
+  String get targetAmount => isHebrew ? 'סכום יעד' : 'Target Amount';
+  String get goalReached => isHebrew ? 'יעד הושג!' : 'Goal Reached!';
+  String get toGo => isHebrew ? 'נשאר' : 'to go';
+  String get deleteGoal => isHebrew ? 'מחק יעד' : 'Delete Goal';
+  String get noGoalsYet =>
+      isHebrew ? 'אין יעדים עדיין! לחץ + להוסיף.' : 'No goals yet! Tap + to add one.';
+
   // ─── Transaction type labels ───────────────────────────────────────────────
   String get moneySet => isHebrew ? 'הגדרת כסף' : 'Money set';
   String get moneyAdded => isHebrew ? 'כסף נוסף' : 'Money added';
