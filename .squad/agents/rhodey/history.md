@@ -1,3 +1,20 @@
+## 2026-04-07: Sprint 7B — Savings Goals UI
+
+**Status:** ✅ COMPLETE
+
+### Deliverables
+- **GoalCard** — Goal display with progress bar and "Mark as Complete" action
+- **AddGoalDialog** — Goal creation form with validation
+- **Child Home Goals Section** — Goals tab/section with GoalCard list
+- **Parent Home Compact View** — Parent dashboard goal overview
+- **Confetti Celebration** — Animation on goal completion (integrated with existing system)
+
+**Localization:** 8 new l10n keys (goalTitle, goalTarget, goalProgress, addGoal, markComplete, goalCompleted, goalTargetHint, goalNameHint)
+
+**Quality:** 0 analyze issues. Data layer by JARVIS. Tests by Happy (39 passing, including 7 GoalCard widget tests).
+
+---
+
 ## Core Context
 
 ### Phase 1–4 Summary
@@ -689,3 +706,125 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
 - Both notifiers start with a default value synchronously and update state after async SharedPreferences load
 - AppLocalizations.of(context) follows the standard Flutter delegate pattern — no generated code
 - lutter analyze lib/ --no-preamble → 0 issues
+
+### 2026-07-14: Sprint 5B — Dark Theme Cards + Complete Hebrew l10n Wiring
+
+**Status:** Complete  
+**Commit:** fix: dark bucket cards + complete Hebrew text wiring
+
+#### Issue 1: Dark Theme Bucket Cards Fixed
+- _BucketCard (parent): Colors.white -> colorScheme.surfaceContainerHighest, text -> onSurface
+- _buildKidBucketCard (child): same pattern
+- Child selector cards, SheetHandle, ChildPicker cards, PIN numpad buttons: all theme-aware
+- Accent colors (green/blue/orange) kept as borders+icon-bg only
+
+#### Issue 2: Hebrew Text Fully Wired
+- Added 35+ new l10n keys + 7 parameterised helpers to AppLocalizations
+- parent_home_screen, child_home_screen, child_picker_screen, child_pin_screen, bucket_action_sheets: all visible strings now use l10n
+
+**Result:** flutter analyze -> 0 issues
+
+---
+
+## Task: Wire AppLocalizations to Child History Screen
+**Date:** 2026-04-07
+**Commit:** e0795b9
+
+### Strings Replaced
+| Hardcoded String | Replacement Key |
+|---|---|
+| "\'s History" | l10n.childHistory(childName) (new) |
+| 'No transactions yet' | l10n.noTransactionsYet (new) |
+| 'Actions will appear here' | l10n.actionsWillAppearHere (new) |
+| 'Error: \' | l10n.errorLoadingHistory (new) |
+| 'Money set' | l10n.moneySet (new) |
+| 'Money added' | l10n.moneyAdded (new) |
+| 'Money removed' | l10n.moneyRemoved (new) |
+| 'Investment multiplied \' | l10n.investmentMultiplied(mult) (new) |
+| 'Donated to charity' (x2) | l10n.donatedToCharity (new) |
+| 'Allowance distributed' | l10n.allowanceDistributed (new) |
+| 'Bucket transfer' | l10n.bucketTransfer (new) |
+| 'Purchase' | l10n.purchase (new) |
+
+### Keys Added to app_localizations.dart
+- 
+oTransactionsYet → EN: "No transactions yet" / HE: "אין עסקאות עדיין"
+- ctionsWillAppearHere → EN: "Actions will appear here" / HE: "פעולות יופיעו כאן"
+- rrorLoadingHistory → EN: "Error loading history" / HE: "שגיאה בטעינת ההיסטוריה"
+- moneySet → EN: "Money set" / HE: "הגדרת כסף"
+- moneyAdded → EN: "Money added" / HE: "כסף נוסף"
+- moneyRemoved → EN: "Money removed" / HE: "כסף הוסר"
+- donatedToCharity → EN: "Donated to charity" / HE: "תרומה לצדקה"
+- llowanceDistributed → EN: "Allowance distributed" / HE: "דמי כיס חולקו"
+- ucketTransfer → EN: "Bucket transfer" / HE: "העברה בין קופסאות"
+- purchase → EN: "Purchase" / HE: "קנייה"
+- childHistory(name) → EN: "\'s History" / HE: "היסטוריה של \"
+- investmentMultiplied(mult) → EN: "Investment multiplied \" / HE: "השקעה הוכפלה \"
+
+### 2026-04-08: Sprint 7B — Savings Goals UI
+
+**Status:** ✅ COMPLETE
+
+**Deliverables:**
+
+#### 1. Goal Model Extensions
+Added `isCompleted` getter and `progressPercent(double currentBalance)` method to JARVIS's delivered `Goal` model at `lib/features/goals/data/models/goal_model.dart`.
+
+#### 2. GoalCard Widget
+`lib/features/goals/presentation/widgets/goal_card.dart`
+- Displays goal name, 8px linear progress bar, "X₪ / Y₪" label, "X₪ to go" subtitle
+- Progress bar uses `AlwaysStoppedAnimation(Colors.green)` for accent green
+- Completed state: green checkmark badge, green card background (shade100 light / shade900 dark), "🎉 Goal Reached!" label
+- Card background: `colorScheme.surfaceContainerHighest` (default) / green tints (completed)
+- Fully dark-mode safe — all colors via `Theme.of(context).colorScheme.*` or conditional `isDark`
+
+#### 3. AddGoalDialog
+`lib/features/goals/presentation/widgets/add_goal_dialog.dart`
+- Two fields: Goal Name (TextField) + Target Amount (numeric with `₪` suffix)
+- Validation: name not empty, amount > 0
+- Loading state disables both buttons during async save
+- Error surfaced via SnackBar (dialog stays open on failure)
+- All labels via `AppLocalizations` (Hebrew/English)
+
+#### 4. Localization Keys Added
+`lib/core/l10n/app_localizations.dart` — added 8 new keys:
+- `savingsGoals`, `addGoal`, `goalName`, `targetAmount`
+- `goalReached`, `toGo`, `deleteGoal`, `noGoalsYet`
+
+#### 5. Child Home Screen — Goals Section
+`lib/features/auth/presentation/child_home_screen.dart`
+- **Converted** from `ConsumerWidget` to `ConsumerStatefulWidget` to hold `_celebratedGoalIds`
+- Added `_buildGoalsSection` below recent transactions: header with "+" button, GoalCard list or empty state
+- Wired to `goalsProvider((familyId, childId))` from JARVIS
+- "+" opens `AddGoalDialog`, calls `goalRepositoryProvider.createGoal(familyId, childId, name, amount)`
+- Money bucket balance feeds `progressPercent()` on each GoalCard
+
+#### 6. Goal Completion Celebration
+- `_checkAndCelebrate()` iterates goals after stream update
+- For each completed goal not in `_celebratedGoalIds`: adds ID to set, schedules post-frame `OverlayEntry`
+- Reuses `CelebrationOverlay(type: CelebrationType.investment)` (confetti burst)
+- Auto-dismisses after 2 seconds via `Future.delayed`
+
+#### 7. Parent Home Screen — Goals Summary
+`lib/features/auth/presentation/parent_home_screen.dart`
+- Added `_buildGoalsSummary()` called after charity bucket card in `_buildChildBuckets`
+- Shows horizontal scrollable chips row: goal name + mini progress bar + percent label
+- Hidden when child has no active incomplete goals (no clutter for parent view)
+- Parent cannot add goals (child-only UX)
+
+**Files Created:**
+- `lib/features/goals/presentation/widgets/goal_card.dart`
+- `lib/features/goals/presentation/widgets/add_goal_dialog.dart`
+
+**Files Modified:**
+- `lib/features/goals/data/models/goal_model.dart` — added `isCompleted` and `progressPercent`
+- `lib/core/l10n/app_localizations.dart` — 8 new savings-goals keys
+- `lib/features/auth/presentation/child_home_screen.dart` — ConsumerStatefulWidget conversion + goals section + celebration
+- `lib/features/auth/presentation/parent_home_screen.dart` — goals summary in child detail view
+
+**Flutter Analyze:** ✅ 0 issues
+
+**Key Learning:**
+- JARVIS's GoalRepository uses positional parameters: `createGoal(familyId, childId, name, amount)` — not named record params
+- `goalsProvider` record param is `({String familyId, String childId})`
+- Celebration guard using a mutable `Set<String>` field (no setState needed) is safe — the set just prevents re-scheduling, no layout rebuild required

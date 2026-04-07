@@ -1,5 +1,92 @@
 # Happy QA Lead - Work History
 
+## 2026-04-07: Sprint 7B — Savings Goals Test Suite (39 Tests, 100% Pass)
+
+**Status:** ✅ COMPLETE
+
+### Summary
+Comprehensive test coverage across 4 files: goal_model_test.dart (13), goal_repository_test.dart (10), goal_completion_test.dart (9), goal_card_test.dart (7).
+
+**Coverage:** Goal model properties (progressPercent, isCompleted), Firestore serialization, repository operations, completion logic, edge cases (zero-amount safety, idempotency, bucket isolation), widget behavior.
+
+**Integration:** Tests use stubs with migration path to real imports once JARVIS ships. All passing.
+
+### Test Files Created
+
+1. **test/features/goals/goal_test_stubs.dart** — shared stubs (not a test file)
+   - `Goal` model stub with `progressPercent`, `isCompleted`, `fromFirestore`, `toMap`, `copyWith`
+   - `GoalRepository` abstract interface
+   - Uses `cloud_firestore` Timestamp (pure data class, no Firebase init needed)
+
+2. **test/features/goals/goal_model_test.dart** (13 tests)
+   - progressPercent: 0.0 at zero balance ✅
+   - progressPercent: 0.5 at half balance ✅
+   - progressPercent: 1.0 at full balance ✅
+   - progressPercent clamps to 1.0 when balance exceeds target ✅
+   - progressPercent: 0.0 when targetAmount is 0 (division-by-zero guard) ✅
+   - isCompleted false when completedAt null ✅
+   - isCompleted true when completedAt set ✅
+   - fromFirestore: deserializes name, targetAmount, isActive ✅
+   - fromFirestore: completedAt null when not set ✅
+   - fromFirestore: completedAt from Timestamp when present ✅
+   - toMap: all required Firestore keys present ✅
+   - toMap: name + targetAmount values correct ✅
+   - toMap: completedAt serializes as Timestamp / null ✅
+
+3. **test/features/goals/goal_repository_test.dart** (10 tests) — includes FakeGoalRepository
+   - createGoal appears in watchGoals stream ✅
+   - newly created goal has isActive = true ✅
+   - cannot create with empty name ✅
+   - cannot create with targetAmount = 0 ✅
+   - cannot create with negative targetAmount ✅
+   - deleteGoal sets isActive to false (soft delete) ✅
+   - deleted goal not visible in stream ✅
+   - markCompleted sets completedAt ✅
+   - markCompleted is idempotent (does not overwrite completedAt) ✅
+   - watchGoals returns only active goals ✅
+
+4. **test/features/goals/goal_completion_test.dart** (9 tests)
+   - completes when money == targetAmount ✅
+   - completes when money exceeds targetAmount ✅
+   - NOT completed when money < targetAmount ✅
+   - NOT completed when balance is zero ✅
+   - already-completed goal not re-completed ✅
+   - Investment bucket does not trigger completion ✅
+   - Charity bucket does not trigger completion ✅
+   - BucketType.money enum sanity check ✅
+
+5. **test/features/goals/goal_card_test.dart** (7 widget tests) — local GoalCard stub
+   - shows goal name ✅
+   - shows progress bar at 0% ✅
+   - shows progress bar at 50% ✅
+   - shows progress bar at 100% ✅
+   - shows "Goal Reached!" when completed ✅
+   - shows correct amount remaining text ✅
+   - calls onTap callback when tapped ✅
+
+### Test Results
+
+- **New tests:** 39 passing, 0 failing, 0 skipped ✅
+- **Full suite baseline:** unchanged (234 passing + 29 pre-existing mock failures)
+
+### Key Technical Decisions
+
+- `goal_test_stubs.dart` is a shared stubs file (not a test file) — mirrors pattern from `fake_bucket_repository.dart`
+- `GoalCard` stub defined locally in `goal_card_test.dart` — serves as behavioural spec for Rhodey; swap import once `lib/features/goals/presentation/widgets/goal_card.dart` lands
+- `GoalRepository` interface defined in stubs — JARVIS's `FirebaseGoalRepository` must implement it
+- `cloud_firestore.Timestamp` used in model tests — safe without Firebase init (pure data class)
+- All stubs have TODO comments pointing to migration path once JARVIS/Rhodey ship
+
+### Migration Path
+
+When JARVIS ships `lib/features/goals/`:
+1. Delete `goal_test_stubs.dart` stubs for `Goal` + `GoalRepository`
+2. Add import: `package:kids_finance/features/goals/data/models/goal_model.dart`
+3. Add import: `package:kids_finance/features/goals/domain/goal_repository.dart`
+4. Swap `GoalCard` stub in `goal_card_test.dart` with real widget import
+
+---
+
 ## Core Context
 
 **Project:** KidsFinance — Kids' financial literacy app (Flutter + Firebase)  

@@ -1,5 +1,21 @@
 # JARVIS Backend Dev - Work History
 
+## 2026-04-07: Sprint 7B — Savings Goals Data Layer
+
+**Status:** ✅ COMPLETE
+
+### Deliverables
+- **Goal Model** (`lib/features/goals/domain/goal.dart`) — Plain Dart class with progressPercent & isCompleted properties
+- **GoalRepository** (`lib/features/goals/domain/goal_repository.dart`) — Domain-layer abstraction
+- **FirebaseGoalRepository** (`lib/features/goals/data/firebase_goal_repository.dart`) — Firestore integration with soft-delete pattern
+- **GoalRepositoryProvider** (`lib/features/goals/providers/goal_repository_provider.dart`) — Singleton Riverpod provider
+- **GoalsProvider** (`lib/features/goals/providers/goals_provider.dart`) — watchGoalsFamily StreamProvider
+- **Firestore Rules** — Updated with savings goals collection rules
+
+**Quality:** 0 analyze issues. Companion tests by Happy (39 passing). UI by Rhodey (8 l10n keys).
+
+---
+
 ## 2024-04-05: Removed Code Generation Dependencies
 
 **Context:** Flutter 3.41.6 (Dart 3.11.4) has analyzer 7.6.0 incompatible with build_runner/freezed/riverpod_generator.
@@ -322,4 +338,38 @@ No changes needed. Existing `isParentOfFamily` + `validBucketUpdate()` + transac
 
 ### Decision Log
 `.squad/decisions/inbox/jarvis-bucket-ops.md`
+
+## Sprint 7B — 2026-04-07: Savings Goals Data Layer
+
+**Status:** ✅ COMPLETE
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `lib/features/goals/data/models/goal_model.dart` | `Goal` plain Dart + Equatable model with `fromFirestore` / `toMap`, Timestamp fields |
+| `lib/features/goals/data/repositories/goal_repository.dart` | Abstract `GoalRepository` interface |
+| `lib/features/goals/data/repositories/firebase_goal_repository.dart` | `FirebaseGoalRepository` implementation with stream, CRUD, and `checkAndCompleteGoals` |
+| `lib/features/goals/data/repositories/goal_repository_provider.dart` | Riverpod `Provider<GoalRepository>` wiring `FirebaseGoalRepository` |
+| `lib/features/goals/presentation/providers/goals_provider.dart` | `goalsProvider` — `StreamProvider.family<List<Goal>, ({familyId, childId})>` |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `firestore.rules` | Added `isChildOfFamily` helper; added goals subcollection rule under `/children/{childId}/goals/{goalId}` |
+
+### Firestore Path
+`/families/{familyId}/children/{childId}/goals/{goalId}`
+
+### Auto-Completion
+`FirebaseGoalRepository.checkAndCompleteGoals(familyId, childId, balance)` queries active goals with null `completedAt` and marks any where `balance >= targetAmount`. Wiring into bucket writes left as TODO — Rhodey triggers from UI instead.
+
+### Notes
+- `isChildOfFamily` always returns false in production (children have no Firebase Auth accounts); defined for future extension
+- `watchGoals` filters `isActive == true`, ordered by `createdAt DESC`
+- `deleteGoal` is soft-delete: sets `isActive: false`
+
+### Code Quality
+`flutter analyze lib/` → **0 issues** ✅
 
