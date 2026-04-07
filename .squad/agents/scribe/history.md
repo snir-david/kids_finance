@@ -30,3 +30,15 @@ Agent Scribe initialized and ready for work.
   - Scribe: Logged this session
 - **Git Commit:** Staged for commit with Phase 1 message
 - **Verification:** All 99+ files accounted for, decision log cross-referenced, agent histories linked
+
+## Session: Back Navigation & Ref Listener Fixes
+
+**Commit:** `ccaf799` — fix: resolve ref.listen assertion + back-nav from child home
+
+**Changes:**
+- conflict_resolution_dialog.dart: Replace ref.listen with ref.listenManual + store ProviderSubscription for cleanup
+- child_home_screen.dart: Wrap Scaffold in PopScope(canPop: false) for hardware back button handling + update AppBar to "Back to Parent"
+- parent_home_screen.dart: Store and close ProviderSubscription in dispose()
+- child_picker_screen.dart: Add context.canPop() guard on back button
+
+**Status:** ✅ Committed — All changes staged, committed cleanly, and verified with git log.

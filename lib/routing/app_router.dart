@@ -12,6 +12,7 @@ import '../features/auth/presentation/child_picker_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
+import '../features/settings/presentation/settings_screen.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
 
 /// A [ChangeNotifier] that tells GoRouter to re-evaluate its redirect whenever
@@ -129,6 +130,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             childName: extra.childName,
           );
         },
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

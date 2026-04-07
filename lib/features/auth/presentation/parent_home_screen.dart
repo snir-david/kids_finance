@@ -133,6 +133,11 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                   ),
                 ),
               IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () => context.push('/settings'),
+              ),
+              IconButton(
                 icon: const Icon(Icons.child_care),
                 tooltip: 'Hand to Child',
                 onPressed: () => context.push('/child-picker'),

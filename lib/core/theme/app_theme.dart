@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// AppTheme provides two distinct themes:
 /// - kidTheme(): Playful, rounded, large tap targets (64x64dp)
 /// - parentTheme(): Professional, data-dense, standard targets (48x48dp)
+/// - light / dark: Material 3 system-wide light/dark themes
 class AppTheme {
   AppTheme._();
 
@@ -64,6 +65,53 @@ class AppTheme {
       ),
     );
   }
+
+  // ─── System-wide light theme ────────────────────────────────────────────────
+  static ThemeData get light => ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.light,
+    ),
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+      elevation: 0,
+    ),
+    cardTheme: CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      filled: true,
+    ),
+  );
+
+  // ─── System-wide dark theme ─────────────────────────────────────────────────
+  static ThemeData get dark => ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.dark,
+      surface: const Color(0xFF1E1E1E),
+    ),
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+      elevation: 0,
+      backgroundColor: Color(0xFF1E1E1E),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 2,
+      color: const Color(0xFF2C2C2C),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      filled: true,
+      fillColor: const Color(0xFF2C2C2C),
+    ),
+  );
 
   /// Parent theme with Inter font and professional styling
   static ThemeData parentTheme() {
