@@ -32,7 +32,13 @@ class ChildPickerScreen extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 tooltip: 'Back to Parent',
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/parent-home');
+                  }
+                },
               ),
               Expanded(
                 child: familyIdAsync.when(

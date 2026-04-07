@@ -59,20 +59,21 @@ class ParentHomeScreen extends ConsumerStatefulWidget {
 
 class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with WidgetsBindingObserver {
   bool _hasShownExpiryWarning = false;
+  ProviderSubscription? _conflictSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Set up conflict dialog listener
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showConflictDialogIfNeeded(context, ref);
+      _conflictSubscription = showConflictDialogIfNeeded(context, ref);
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _conflictSubscription?.close();
     super.dispose();
   }
 

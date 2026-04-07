@@ -84,9 +84,11 @@ class ConflictResolutionDialog extends ConsumerWidget {
 }
 
 /// Shows conflict resolution dialog when conflicts are detected.
-/// Call this from your home screen widget.
-void showConflictDialogIfNeeded(BuildContext context, WidgetRef ref) {
-  ref.listen<List<BucketConflict>>(pendingConflictsProvider, (prev, next) {
+/// Returns a [ProviderSubscription] — caller must close it in dispose().
+ProviderSubscription<List<BucketConflict>> showConflictDialogIfNeeded(
+    BuildContext context, WidgetRef ref) {
+  return ref.listenManual<List<BucketConflict>>(pendingConflictsProvider,
+      (prev, next) {
     if (next.isNotEmpty && context.mounted) {
       _showNextConflict(context, next.first);
     }

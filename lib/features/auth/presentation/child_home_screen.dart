@@ -74,30 +74,40 @@ class ChildHomeScreen extends ConsumerWidget {
               );
             }
 
-            return Scaffold(
-              backgroundColor: AppTheme.backgroundColor,
-              appBar: AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                title: Text(
-                  'Hi ${child.displayName}! 👋',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop) {
+                  ref.read(activeChildProvider.notifier).setState(null);
+                  ref.read(selectedChildProvider.notifier).setState(null);
+                  context.go('/parent-home');
+                }
+              },
+              child: Scaffold(
+                backgroundColor: AppTheme.backgroundColor,
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: Text(
+                    'Hi ${child.displayName}! 👋',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.exit_to_app),
+                      tooltip: 'Back to Parent',
+                      onPressed: () {
+                        ref.read(activeChildProvider.notifier).setState(null);
+                        ref.read(selectedChildProvider.notifier).setState(null);
+                        context.go('/parent-home');
+                      },
+                    ),
+                  ],
                 ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.people_outline),
-                    tooltip: 'Switch Child',
-                    onPressed: () {
-                      ref.read(activeChildProvider.notifier).setState(null);
-                      ref.read(selectedChildProvider.notifier).setState(null);
-                      context.go('/child-picker');
-                    },
-                  ),
-                ],
+                body: _buildDashboard(context, ref, familyId, child.id, child.displayName),
               ),
-              body: _buildDashboard(context, ref, familyId, child.id, child.displayName),
             );
           },
           loading: () => const Scaffold(

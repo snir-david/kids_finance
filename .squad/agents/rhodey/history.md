@@ -649,3 +649,22 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
 - lib/features/auth/presentation/parent_home_screen.dart
 
 **Flutter Analyze:** ✅ 0 issues
+
+---
+
+## Session: Fix Back Navigation Crash on Child Home Screen
+
+**Date:** 2026-04-07
+
+### Changes Made
+
+1. **lib/features/auth/presentation/child_home_screen.dart**
+   - Wrapped the innermost Scaffold with PopScope(canPop: false) — intercepts Android back button / swipe-back gesture and navigates to /parent-home, clearing both ctiveChildProvider and selectedChildProvider.
+   - Changed the AppBar action icon from Icons.people_outline ("Switch Child" → /child-picker) to Icons.exit_to_app ("Back to Parent" → /parent-home) with same state-clearing logic.
+
+2. **lib/features/auth/presentation/child_picker_screen.dart**
+   - Fixed the back button onPressed to use context.canPop() guard: pops the stack if possible, falls back to context.go('/parent-home') if the picker was opened via router redirect with no stack.
+
+### Result
+- lutter analyze lib/ → **0 issues**
+- Hardware back / swipe-back from child home now safely returns to parent home instead of crashing or looping.
