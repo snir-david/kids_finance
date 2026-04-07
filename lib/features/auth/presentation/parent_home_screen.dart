@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -639,6 +640,30 @@ class _MoneyActionRow extends StatelessWidget {
 
 enum _MoneyMode { add, remove, set }
 
+// ─── Firestore error → human-readable message ─────────────────────────────────
+/// Returns a user-friendly error string for any Firestore / platform failure.
+/// Never exposes raw exception internals to the user.
+String _firestoreErrorMessage(Object e) {
+  if (e is FirebaseException) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'You don\'t have permission to do that. Please sign out and sign back in.';
+      case 'not-found':
+        return 'The record wasn\'t found. Please refresh and try again.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Network error — check your connection and try again.';
+      case 'already-exists':
+        return 'This already exists. Please refresh and try again.';
+      case 'resource-exhausted':
+        return 'Too many requests. Please wait a moment and try again.';
+      default:
+        return 'Something went wrong (${e.code}). Please try again.';
+    }
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 // ─── Add Child Dialog ─────────────────────────────────────────────────────────
 
 class _AddChildDialog extends StatefulWidget {
@@ -701,7 +726,16 @@ class _AddChildDialogState extends State<_AddChildDialog> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final msg = _firestoreErrorMessage(e);
+      if (mounted) {
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -921,7 +955,16 @@ class _MoneyDialogState extends State<_MoneyDialog> {
 
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final msg = _firestoreErrorMessage(e);
+      if (mounted) {
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1046,7 +1089,16 @@ class _MultiplyDialogState extends State<_MultiplyDialog> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final msg = _firestoreErrorMessage(e);
+      if (mounted) {
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1182,7 +1234,16 @@ class _DonateDialogState extends State<_DonateDialog> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final msg = _firestoreErrorMessage(e);
+      if (mounted) {
+        setState(() => _error = msg);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
