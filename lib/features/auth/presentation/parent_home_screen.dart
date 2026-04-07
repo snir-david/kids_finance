@@ -1169,6 +1169,10 @@ class _DistributeFundsDialog extends StatefulWidget {
 }
 
 class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
+  static const double _moneyPercent = 0.70;
+  static const double _investPercent = 0.20;
+  static const double _charityPercent = 0.10;
+
   final _totalController = TextEditingController();
   final _moneyController = TextEditingController();
   final _investmentController = TextEditingController();
@@ -1194,8 +1198,66 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
   double get _allocatedTotal => _moneyAmount + _investmentAmount + _charityAmount;
   double get _remaining => _totalAmount - _allocatedTotal;
 
-  void _updateFields() {
-    setState(() {});
+  bool get _moneyFilled => _moneyController.text.trim().isNotEmpty;
+  bool get _investmentFilled => _investmentController.text.trim().isNotEmpty;
+  bool get _charityFilled => _charityController.text.trim().isNotEmpty;
+  int get _filledCount =>
+      (_moneyFilled ? 1 : 0) + (_investmentFilled ? 1 : 0) + (_charityFilled ? 1 : 0);
+
+  void _updateFields() => setState(() {});
+
+  void _autoDistribute() {
+    if (_totalAmount <= 0) return;
+    final money = double.parse((_totalAmount * _moneyPercent).toStringAsFixed(2));
+    final invest = double.parse((_totalAmount * _investPercent).toStringAsFixed(2));
+    final charity = double.parse((_totalAmount * _charityPercent).toStringAsFixed(2));
+    // Rounding remainder goes to money
+    final remainder = double.parse((_totalAmount - money - invest - charity).toStringAsFixed(2));
+    setState(() {
+      _moneyController.text = (money + remainder).toStringAsFixed(2);
+      _investmentController.text = invest.toStringAsFixed(2);
+      _charityController.text = charity.toStringAsFixed(2);
+    });
+  }
+
+  ({double money, double invest, double charity})? _resolvedAmounts() {
+    if (_filledCount == 0) {
+      // Auto-distribute
+      final money = double.parse((_totalAmount * _moneyPercent).toStringAsFixed(2));
+      final invest = double.parse((_totalAmount * _investPercent).toStringAsFixed(2));
+      final charity = double.parse((_totalAmount * _charityPercent).toStringAsFixed(2));
+      final remainder = double.parse((_totalAmount - money - invest - charity).toStringAsFixed(2));
+      return (money: money + remainder, invest: invest, charity: charity);
+    }
+
+    final moneyAmt = _moneyFilled ? _moneyAmount : 0.0;
+    final investAmt = _investmentFilled ? _investmentAmount : 0.0;
+    final charityAmt = _charityFilled ? _charityAmount : 0.0;
+
+    if ((_moneyFilled && moneyAmt <= 0) ||
+        (_investmentFilled && investAmt <= 0) ||
+        (_charityFilled && charityAmt <= 0)) {
+      setState(() => _error = 'Each entered bucket amount must be greater than 0');
+      return null;
+    }
+
+    // All 3 filled: sum must match total
+    if (_filledCount == 3 && (moneyAmt + investAmt + charityAmt - _totalAmount).abs() > 0.005) {
+      final diff = _totalAmount - (moneyAmt + investAmt + charityAmt);
+      setState(() => _error =
+          'Bucket totals must equal \$${_totalAmount.toStringAsFixed(2)} '
+          '(${diff > 0 ? '\$${diff.toStringAsFixed(2)} remaining' : '\$${(-diff).toStringAsFixed(2)} over'})');
+      return null;
+    }
+
+    // Partial fill: must not exceed total
+    if (moneyAmt + investAmt + charityAmt > _totalAmount + 0.005) {
+      setState(() => _error =
+          'Bucket totals exceed total by \$${(moneyAmt + investAmt + charityAmt - _totalAmount).toStringAsFixed(2)}');
+      return null;
+    }
+
+    return (money: moneyAmt, invest: investAmt, charity: charityAmt);
   }
 
   Future<void> _submit() async {
@@ -1204,15 +1266,8 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
       return;
     }
 
-    if (_moneyAmount < 0 || _investmentAmount < 0 || _charityAmount < 0) {
-      setState(() => _error = 'Individual amounts cannot be negative');
-      return;
-    }
-
-    if (_allocatedTotal != _totalAmount) {
-      setState(() => _error = 'Allocated amounts must equal total (\$${_remaining.abs().toStringAsFixed(2)} ${_remaining > 0 ? 'remaining' : 'over'})');
-      return;
-    }
+    final amounts = _resolvedAmounts();
+    if (amounts == null) return;
 
     setState(() {
       _isLoading = true;
@@ -1221,22 +1276,26 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
 
     try {
       final repo = widget.ref.read(bucketRepositoryProvider);
-      final note = _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim();
+      final note = _noteController.text.trim().isEmpty ? null : _noteController.text.trim();
 
       await repo.distributeFunds(
         familyId: widget.familyId,
         childId: widget.child.id,
-        moneyAmount: _moneyAmount,
-        investmentAmount: _investmentAmount,
-        charityAmount: _charityAmount,
+        moneyAmount: amounts.money,
+        investmentAmount: amounts.invest,
+        charityAmount: amounts.charity,
         performedByUid: widget.performedByUid,
         note: note,
       );
 
       if (mounted) {
         Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Funds added successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
         _showCelebration(context, CelebrationType.money);
       }
     } catch (e) {
@@ -1244,10 +1303,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
       if (mounted) {
         setState(() => _error = msg);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.red.shade700,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
         );
       }
     } finally {
@@ -1257,14 +1313,10 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isValid = _totalAmount > 0 && 
-                    _allocatedTotal == _totalAmount && 
-                    _moneyAmount >= 0 && 
-                    _investmentAmount >= 0 && 
-                    _charityAmount >= 0;
+    final hasTotal = _totalAmount > 0;
 
     return AlertDialog(
-      title: Text('Add Allowance for ${widget.child.displayName}'),
+      title: Text('Add Funds for ${widget.child.displayName}'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1283,19 +1335,18 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               decoration: const InputDecoration(
                 prefixText: '\$',
                 hintText: '0.00',
-                labelText: 'Total to distribute',
+                labelText: 'Total amount',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
 
             const Text(
-              'Split Across Buckets',
+              'Per Bucket (optional)',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 12),
 
-            // Money bucket
             TextField(
               controller: _moneyController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1309,7 +1360,6 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
             ),
             const SizedBox(height: 12),
 
-            // Investment bucket
             TextField(
               controller: _investmentController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1323,7 +1373,6 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
             ),
             const SizedBox(height: 12),
 
-            // Charity bucket
             TextField(
               controller: _charityController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1341,17 +1390,17 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _remaining == 0 
-                    ? Colors.green.shade50 
-                    : _remaining > 0 
-                        ? Colors.orange.shade50 
+                color: _remaining == 0
+                    ? Colors.green.shade50
+                    : _remaining > 0
+                        ? Colors.orange.shade50
                         : Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: _remaining == 0 
-                      ? Colors.green.shade300 
-                      : _remaining > 0 
-                          ? Colors.orange.shade300 
+                  color: _remaining == 0
+                      ? Colors.green.shade300
+                      : _remaining > 0
+                          ? Colors.orange.shade300
                           : Colors.red.shade300,
                 ),
               ),
@@ -1363,13 +1412,14 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    '\$${_remaining.abs().toStringAsFixed(2)} ${_remaining > 0 ? 'left' : _remaining < 0 ? 'over' : '✓'}',
+                    '\$${_remaining.abs().toStringAsFixed(2)}'
+                    '${_remaining > 0 ? ' left' : _remaining < 0 ? ' over' : ' ✓'}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: _remaining == 0 
-                          ? Colors.green.shade700 
-                          : _remaining > 0 
-                              ? Colors.orange.shade700 
+                      color: _remaining == 0
+                          ? Colors.green.shade700
+                          : _remaining > 0
+                              ? Colors.orange.shade700
                               : Colors.red.shade700,
                     ),
                   ),
@@ -1378,7 +1428,6 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Note field
             TextField(
               controller: _noteController,
               decoration: const InputDecoration(
@@ -1402,18 +1451,19 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
           onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
+        OutlinedButton(
+          onPressed: (_isLoading || !hasTotal) ? null : _autoDistribute,
+          child: const Text('Auto-Distribute'),
+        ),
         FilledButton(
-          onPressed: (_isLoading || !isValid) ? null : _submit,
+          onPressed: (_isLoading || !hasTotal) ? null : _submit,
           child: _isLoading
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : const Text('Distribute'),
+              : const Text('Add Funds'),
         ),
       ],
     );

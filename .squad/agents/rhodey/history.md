@@ -319,6 +319,38 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
   - Zero-amount validation prevents invalid submissions
   - All three tasks from Sprint 5A Wave 1 delivered
 
+### 2026-04-08: Add Funds Dialog Redesign
+- **Status:** ✅ COMPLETE
+- **Delivered:**
+  - Redesigned `_DistributeFundsDialog` / `_DistributeFundsDialogState` in `parent_home_screen.dart`
+  - New title: "Add Funds for [Child Name]" (was "Add Allowance for...")
+  - Section label changed to "Per Bucket (optional)" (was "Split Across Buckets")
+  - Added **Auto-Distribute** button (OutlinedButton): fills all three bucket fields with 70/20/10 split
+  - Rounding remainder always goes into Money bucket
+  - Added **"Add Funds"** button (was "Distribute")
+  - Smarter submit validation:
+    - No buckets filled + total entered → auto-distribute then submit
+    - Some buckets filled → submit only those (others receive 0 via distributeFunds)
+    - All 3 filled + sum ≠ total → validation error
+    - Bucket amounts > total → validation error
+    - Empty bucket amounts ("") are skipped, not treated as 0-input
+  - Success now shows SnackBar "Funds added successfully" (green) then celebration
+  - Error: SnackBar with message, dialog stays open
+  - Auto-Distribute button disabled when total is 0 or empty
+  - Add Funds button disabled when total is 0 or empty
+  - Loading state disables both action buttons
+
+- **Distribution Percentages:**
+  - Money: 70%
+  - Investment: 20%
+  - Charity: 10%
+
+- **Files Modified:**
+  - `lib/features/auth/presentation/parent_home_screen.dart`
+    - Full replacement of `_DistributeFundsDialogState` class body
+
+- **Flutter Analyze:** ✅ 0 issues
+
 ### 2026-04-08: Sprint 5A Wave 2 — Wired Up JARVIS's New Repository Methods
 - **Status:** ✅ COMPLETE
 - **Delivered:**

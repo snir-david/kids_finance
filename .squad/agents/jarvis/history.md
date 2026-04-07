@@ -258,3 +258,22 @@ Audited and rewrote four documentation files to match actual implemented code:
 Audited and corrected critical data layer docs: FIRESTORE_DATA_MODEL.md (v2.0), DATA_LAYER_MANIFEST.md (removed build_runner myth), SETUP_DATA_LAYER.md (replaced harmful steps), AUTH_SECURITY_PHASE1_COMPLETE.md (updated to Sprint 5C security).
 
 Orchestration Log: .squad/orchestration-log/2026-04-07T00-00-00Z-jarvis-docs.md
+
+## 2026-04-08: Firestore Composite Index Fix
+
+**Status:** ✅ COMPLETE — Deployed
+
+### Problem
+`getTransactionsStream` query threw `FAILED_PRECONDITION` at runtime. `firestore.indexes.json` was completely empty.
+
+### Fix
+Added two composite indexes to `firestore.indexes.json`:
+
+1. **`childId ASC` + `performedAt DESC` + `__name__ DESC`** — fixes the immediate crash (query in `FirebaseTransactionRepository.getTransactionsStream`)
+2. **`childId ASC` + `type ASC` + `performedAt DESC`** — proactive index for type-filtered queries (currently in-memory; likely to move to Firestore)
+
+### Deployment
+`firebase deploy --only firestore:indexes` → ✅ success, deployed to `kids-finance-80957`
+
+### Decision Log
+`.squad/decisions/inbox/jarvis-index-fix.md`

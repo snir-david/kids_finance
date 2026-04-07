@@ -507,6 +507,79 @@
 
 ---
 
+### Add Funds Dialog UX Redesign (Rhodey — 2026-04-08)
+**Status:** Implemented ✅
+
+**Problem:**
+- **Remove**: parent picks specific bucket, enters amount → good UX
+- **Add**: forced "distribute to all" pattern with no flexibility → bad UX
+
+**Solution: Three Modes in One Unified Form**
+
+1. **Enter total only (no buckets):** Auto-distributes using default split on submit.
+2. **Enter total + some buckets:** Adds only to specified buckets; empty buckets are skipped.
+3. **Enter total + all buckets:** Validates that bucket sum equals total; submits atomically.
+
+**Auto-Distribute Button**
+- Clicking pre-fills the bucket fields with the default split
+- Parent can adjust before confirming
+
+**Default Split Percentages**
+- 💰 Money: 70%
+- 📈 Investment: 20%
+- ❤️ Charity: 10%
+- Rounding remainder always goes to **Money**
+
+**Validation Rules**
+- Total must be > 0
+- Any entered bucket amount must be > 0 (empty = skip)
+- Entered bucket amounts must not exceed total
+- If all 3 buckets are filled, their sum must equal total (±0.005 tolerance)
+
+**Remaining Indicator**
+- 🟢 Green: fully allocated (sum = total)
+- 🟠 Orange: under-allocated (sum < total)
+- 🔴 Red: over-allocated (sum > total)
+
+**Implementation**
+- File: `lib/features/auth/presentation/parent_home_screen.dart` — `_DistributeFundsDialogState`
+- Uses `distributeFunds(money, invest, charity)` for all cases (pass 0 for skipped buckets)
+- Success: SnackBar "Funds added successfully" + celebration overlay
+- Error: SnackBar with message, dialog stays open
+- Buttons disabled during async operation (loading state)
+
+---
+
+### Add Missing Firestore Composite Indexes (JARVIS — 2026-04-08)
+**Status:** ✅ Deployed
+
+**Problem:**
+Firestore threw `FAILED_PRECONDITION` on the `getTransactionsStream` query in `FirebaseTransactionRepository`:
+```
+Query(families/{familyId}/transactions where childId==X order by -performedAt, -__name__)
+requires an index.
+```
+
+**Fix Applied: Two Composite Indexes**
+
+**Index 1 — Required (fixes the reported error)**
+- **Collection:** `transactions`
+- **Fields:** `childId ASC` + `performedAt DESC` + `__name__ DESC`
+- **Supports:** `getTransactionsStream(childId, familyId, limit?)` in `FirebaseTransactionRepository`
+
+**Index 2 — Proactive**
+- **Collection:** `transactions`
+- **Fields:** `childId ASC` + `type ASC` + `performedAt DESC`
+- **Supports:** Future queries filtering by child + transaction type (currently in-memory in `transaction_providers.dart` line 52)
+
+**Deployment**
+```
+firebase deploy --only firestore:indexes
+```
+✅ Successfully deployed to project `kids-finance-80957`
+
+---
+
 ### Integration Complete (Stark — 2024)
 **Status:** ✅ VERIFIED
 
