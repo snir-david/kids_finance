@@ -564,4 +564,299 @@ class FirebaseBucketRepository implements BucketRepository {
       }
     });
   }
+
+  @override
+  Future<double> donateBucket(String familyId, String childId) async {
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'donateBucket',
+        payload: {'childId': childId, 'familyId': familyId},
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return 0.0;
+    }
+
+    final bucketRef = _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId)
+        .collection('buckets')
+        .doc('charity');
+
+    final transactionRef =
+        _firestore.collection('families').doc(familyId).collection('transactions').doc();
+
+    double donatedAmount = 0.0;
+
+    await _firestore.runTransaction((tx) async {
+      final bucketSnapshot = await tx.get(bucketRef);
+      final currentBalance = (bucketSnapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+      donatedAmount = currentBalance;
+      final now = DateTime.now();
+
+      final txn = app_transaction.Transaction(
+        id: transactionRef.id,
+        familyId: familyId,
+        childId: childId,
+        bucketType: BucketType.charity,
+        type: app_transaction.TransactionType.donate,
+        amount: currentBalance,
+        multiplier: null,
+        previousBalance: currentBalance,
+        newBalance: 0.0,
+        note: null,
+        performedByUid: 'system',
+        performedAt: now,
+      );
+
+      tx.update(bucketRef, {
+        'balance': 0.0,
+        'lastUpdatedAt': Timestamp.fromDate(now),
+      });
+      tx.set(transactionRef, txn.toJson()..remove('id'));
+    });
+
+    return donatedAmount;
+  }
+
+  @override
+  Future<void> transferBetweenBuckets(
+    String familyId,
+    String childId,
+    BucketType from,
+    BucketType to,
+    double amount,
+  ) async {
+    if (amount <= 0) {
+      throw ArgumentError('Transfer amount must be greater than 0');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'transfer',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'from': from.name,
+          'to': to.name,
+          'amount': amount,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
+    }
+
+    final childPath = _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId);
+
+    final fromRef = childPath.collection('buckets').doc(from.name);
+    final toRef = childPath.collection('buckets').doc(to.name);
+
+    final txnsCollection =
+        _firestore.collection('families').doc(familyId).collection('transactions');
+    final fromTxnRef = txnsCollection.doc();
+    final toTxnRef = txnsCollection.doc();
+
+    await _firestore.runTransaction((tx) async {
+      final fromSnap = await tx.get(fromRef);
+      final toSnap = await tx.get(toRef);
+
+      final fromBalance = (fromSnap.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+      final toBalance = (toSnap.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+
+      if (fromBalance < amount) {
+        throw ArgumentError('Insufficient balance in ${from.name} bucket');
+      }
+
+      final fromNew = fromBalance - amount;
+      final toNew = toBalance + amount;
+      final now = DateTime.now();
+      final timestamp = Timestamp.fromDate(now);
+
+      tx.update(fromRef, {'balance': fromNew, 'lastUpdatedAt': timestamp});
+      tx.update(toRef, {'balance': toNew, 'lastUpdatedAt': timestamp});
+
+      tx.set(
+        fromTxnRef,
+        app_transaction.Transaction(
+          id: fromTxnRef.id,
+          familyId: familyId,
+          childId: childId,
+          bucketType: from,
+          type: app_transaction.TransactionType.transfer,
+          amount: -amount,
+          multiplier: null,
+          previousBalance: fromBalance,
+          newBalance: fromNew,
+          note: 'Transfer to ${to.name}',
+          performedByUid: 'system',
+          performedAt: now,
+        ).toJson()
+          ..remove('id'),
+      );
+
+      tx.set(
+        toTxnRef,
+        app_transaction.Transaction(
+          id: toTxnRef.id,
+          familyId: familyId,
+          childId: childId,
+          bucketType: to,
+          type: app_transaction.TransactionType.transfer,
+          amount: amount,
+          multiplier: null,
+          previousBalance: toBalance,
+          newBalance: toNew,
+          note: 'Transfer from ${from.name}',
+          performedByUid: 'system',
+          performedAt: now,
+        ).toJson()
+          ..remove('id'),
+      );
+    });
+  }
+
+  @override
+  Future<void> withdrawFromBucket(String familyId, String childId, double amount) async {
+    if (amount <= 0) {
+      throw ArgumentError('Withdrawal amount must be greater than 0');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'withdraw',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'amount': amount,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
+    }
+
+    final bucketRef = _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId)
+        .collection('buckets')
+        .doc('money');
+
+    final transactionRef =
+        _firestore.collection('families').doc(familyId).collection('transactions').doc();
+
+    await _firestore.runTransaction((tx) async {
+      final bucketSnapshot = await tx.get(bucketRef);
+      final currentBalance = (bucketSnapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+
+      if (currentBalance < amount) {
+        throw ArgumentError('Insufficient balance in money bucket');
+      }
+
+      final newBalance = currentBalance - amount;
+      final now = DateTime.now();
+
+      final txn = app_transaction.Transaction(
+        id: transactionRef.id,
+        familyId: familyId,
+        childId: childId,
+        bucketType: BucketType.money,
+        type: app_transaction.TransactionType.spend,
+        amount: amount,
+        multiplier: null,
+        previousBalance: currentBalance,
+        newBalance: newBalance,
+        note: null,
+        performedByUid: 'system',
+        performedAt: now,
+      );
+
+      tx.update(bucketRef, {
+        'balance': newBalance,
+        'lastUpdatedAt': Timestamp.fromDate(now),
+      });
+      tx.set(transactionRef, txn.toJson()..remove('id'));
+    });
+  }
+
+  @override
+  Future<void> multiplyBucket(
+    String familyId,
+    String childId,
+    BucketType bucketType,
+    double multiplier,
+  ) async {
+    if (multiplier <= 0) {
+      throw ArgumentError('Multiplier must be greater than 0');
+    }
+
+    if (!await _connectivity.isOnline) {
+      await _queue.enqueue(PendingOperation(
+        id: _queue.generateId(),
+        type: 'multiplyBucket',
+        payload: {
+          'childId': childId,
+          'familyId': familyId,
+          'bucketType': bucketType.name,
+          'multiplier': multiplier,
+        },
+        createdAt: DateTime.now(),
+        retryCount: 0,
+      ));
+      return;
+    }
+
+    final bucketRef = _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('children')
+        .doc(childId)
+        .collection('buckets')
+        .doc(bucketType.name);
+
+    final transactionRef =
+        _firestore.collection('families').doc(familyId).collection('transactions').doc();
+
+    await _firestore.runTransaction((tx) async {
+      final bucketSnapshot = await tx.get(bucketRef);
+      final currentBalance =
+          (bucketSnapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+
+      final newBalance = currentBalance * multiplier;
+      final amount = newBalance - currentBalance;
+      final now = DateTime.now();
+
+      final txn = app_transaction.Transaction(
+        id: transactionRef.id,
+        familyId: familyId,
+        childId: childId,
+        bucketType: bucketType,
+        type: app_transaction.TransactionType.investmentMultiplied,
+        amount: amount,
+        multiplier: multiplier,
+        previousBalance: currentBalance,
+        newBalance: newBalance,
+        note: null,
+        performedByUid: 'system',
+        performedAt: now,
+      );
+
+      tx.update(bucketRef, {
+        'balance': newBalance,
+        'lastUpdatedAt': Timestamp.fromDate(now),
+      });
+      tx.set(transactionRef, txn.toJson()..remove('id'));
+    });
+  }
 }

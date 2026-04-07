@@ -1,6 +1,34 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kids_finance/features/buckets/data/firebase_bucket_repository.dart';
+import 'package:kids_finance/core/offline/connectivity_service.dart';
+import 'package:kids_finance/core/offline/offline_queue.dart';
+import 'package:kids_finance/core/offline/pending_operation.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+
+class _FakeConnectivity extends ConnectivityService {
+  @override
+  Future<bool> get isOnline async => true;
+  @override
+  Stream<bool> get isOnlineStream => Stream.value(true);
+}
+
+class _FakeQueue extends OfflineQueue {
+  final _ops = <String, PendingOperation>{};
+  @override
+  Future<void> enqueue(PendingOperation op) async => _ops[op.id] = op;
+  @override
+  List<PendingOperation> getPending() {
+    final ops = _ops.values.toList();
+    ops.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return ops;
+  }
+  @override
+  Future<void> remove(String id) async => _ops.remove(id);
+  @override
+  List<PendingOperation> getExpiring() => [];
+  @override
+  Future<void> purgeExpired() async => _ops.clear();
+}
 
 void main() {
   group('Bucket Repository Critical Bug Tests', () {
@@ -9,7 +37,11 @@ void main() {
 
     setUp(() {
       fakeFirestore = FakeFirebaseFirestore();
-      repository = FirebaseBucketRepository(firestore: fakeFirestore);
+      repository = FirebaseBucketRepository(
+        firestore: fakeFirestore,
+        connectivity: _FakeConnectivity(),
+        queue: _FakeQueue(),
+      );
 
       // Setup test data
       fakeFirestore

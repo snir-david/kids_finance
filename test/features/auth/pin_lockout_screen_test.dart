@@ -1,15 +1,12 @@
 // TODO: wire up when PIN lockout UI is available
 // Testing PIN lockout screen (Sprint 5C — Security)
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   group('PIN Lockout UI', () {
     testWidgets('when locked out: PIN entry screen shows lockout message with remaining time', (tester) async {
       // Arrange
-      const childId = 'child1';
       const remainingMinutes = 14;
 
       // TODO: When ChildPinScreen with lockout UI is available, use:
@@ -80,10 +77,7 @@ void main() {
     });
 
     testWidgets('PIN input disabled during lockout', (tester) async {
-      // Arrange
-      const childId = 'child1';
-
-      // TODO: When ChildPinScreen with lockout UI is available, use:
+      // TODO: When ChildPinScreenwith lockout UI is available, use:
       // tester.view.physicalSize = const Size(400, 900);
       // tester.view.devicePixelRatio = 1.0;
       // addTearDown(tester.view.reset);
@@ -133,10 +127,7 @@ void main() {
     });
 
     testWidgets('after lockout expires: input re-enabled', (tester) async {
-      // Arrange
-      const childId = 'child1';
-
-      // TODO: When ChildPinScreen with lockout UI is available, use:
+      // TODO: When ChildPinScreenwith lockout UI is available, use:
       // tester.view.physicalSize = const Size(400, 900);
       // tester.view.devicePixelRatio = 1.0;
       // addTearDown(tester.view.reset);

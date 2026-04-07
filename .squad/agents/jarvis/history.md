@@ -277,3 +277,49 @@ Added two composite indexes to `firestore.indexes.json`:
 
 ### Decision Log
 `.squad/decisions/inbox/jarvis-index-fix.md`
+
+## Sprint 6A — 2026-04-09: New Bucket Operations
+
+**Status:** ✅ COMPLETE
+
+### New Methods Added
+
+**`donateBucket(familyId, childId) → Future<double>`**
+- Donates entire charity bucket balance, sets it to 0
+- Records `type=donate` transaction
+- Returns donated amount for celebration UI
+- Offline-safe: queues as `'donateBucket'` when offline (returns 0.0)
+
+**`transferBetweenBuckets(familyId, childId, from, to, amount) → Future<void>`**
+- Atomically moves `amount` between any two buckets
+- Validates `amount > 0` and sufficient source balance
+- Records two `type=transfer` transactions (debit + credit)
+- Uses `runTransaction` for atomicity (read + write)
+- Offline-safe: queues as `'transfer'`
+
+**`withdrawFromBucket(familyId, childId, amount) → Future<void>`**
+- Subtracts `amount` from Money bucket (purchase simulation)
+- Validates `amount > 0` and sufficient balance
+- Records `type=spend` transaction
+- Offline-safe: queues as `'withdraw'`
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `lib/features/transactions/domain/transaction.dart` | Added `donate`, `transfer`, `spend` to `TransactionType` enum |
+| `lib/features/buckets/domain/bucket_repository.dart` | Added 3 abstract method signatures |
+| `lib/features/buckets/data/firebase_bucket_repository.dart` | Implemented 3 new methods |
+| `lib/core/offline/pending_operation.dart` | Updated type comment with `donateBucket`, `transfer`, `withdraw` |
+| `lib/features/auth/presentation/child_home_screen.dart` | Added switch cases for 3 new TransactionTypes |
+| `lib/features/transactions/presentation/transaction_history_screen.dart` | Added switch cases for 3 new TransactionTypes |
+
+### Firestore Rules
+No changes needed. Existing `isParentOfFamily` + `validBucketUpdate()` + transaction `allow create` fully cover all 3 new operations.
+
+### Code Quality
+`flutter analyze lib/` → **0 issues** ✅
+
+### Decision Log
+`.squad/decisions/inbox/jarvis-bucket-ops.md`
+

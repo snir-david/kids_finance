@@ -3,6 +3,116 @@
 **Document:** Merged Phase 1 decisions from all agents  
 **Date:** 2026-04-05  
 **Source:** Consolidated from `.squad/decisions/inbox/` with deduplication  
+**Last Updated:** 2026-04-07
+
+---
+
+## Z. API Contract: New Bucket Operations (2026-04-09)
+
+**Author:** JARVIS (Backend Dev)  
+**Status:** READY FOR UI INTEGRATION
+
+### New Methods on `BucketRepository`
+
+#### 1. `donateBucket`
+
+```dart
+/// Donates the entire charity bucket balance.
+/// Sets charity balance to 0. Returns the donated amount (for celebration UI).
+/// Offline-safe: queues as 'donateBucket' when offline (returns 0.0 when queued).
+Future<double> donateBucket(String familyId, String childId);
+```
+
+**Behavior:**
+- Reads current charity bucket balance
+- Sets charity balance to `0.0`
+- Records transaction: `type=donate`, `bucketType=charity`, `amount=currentBalance`
+- Returns the donated amount (use this to show "You donated $X!" in the UI)
+- No-op (no throw) if balance is already 0
+
+#### 2. `transferBetweenBuckets`
+
+```dart
+/// Moves [amount] from one bucket to another atomically.
+/// Throws ArgumentError if amount <= 0 or source bucket has insufficient balance.
+/// Offline-safe: queues as 'transfer' when offline.
+Future<void> transferBetweenBuckets(
+  String familyId,
+  String childId,
+  BucketType from,
+  BucketType to,
+  double amount,
+);
+```
+
+**Behavior:**
+- Validates `amount > 0` → throws `ArgumentError('Transfer amount must be greater than 0')`
+- Validates `from.balance >= amount` → throws `ArgumentError('Insufficient balance in <bucket> bucket')`
+- Atomically deducts `amount` from `from` bucket and adds to `to` bucket
+- Records **two** transaction log entries (both `type=transfer`):
+  - Source: `amount = -amount`, `note = 'Transfer to <to>'`
+  - Destination: `amount = +amount`, `note = 'Transfer from <from>'`
+
+**Use cases:**
+| From | To | Example |
+|------|----|---------|
+| `BucketType.investment` | `BucketType.money` | Draw from savings |
+| `BucketType.money` | `BucketType.investment` | Save from spending |
+| `BucketType.money` | `BucketType.charity` | Move to give |
+
+#### 3. `withdrawFromBucket`
+
+```dart
+/// Withdraws [amount] from the Money bucket (simulates a real-world purchase).
+/// Throws ArgumentError if amount <= 0 or insufficient balance.
+/// Offline-safe: queues as 'withdraw' when offline.
+Future<void> withdrawFromBucket(String familyId, String childId, double amount);
+```
+
+**Behavior:**
+- Validates `amount > 0` → throws `ArgumentError('Withdrawal amount must be greater than 0')`
+- Validates `money.balance >= amount` → throws `ArgumentError('Insufficient balance in money bucket')`
+- Deducts `amount` from Money bucket
+- Records transaction: `type=spend`, `bucketType=money`, `amount=amount`
+
+### New `TransactionType` Enum Values
+
+```dart
+enum TransactionType {
+  moneySet,
+  investmentMultiplied,
+  charityDonated,
+  moneyAdded,
+  moneyRemoved,
+  distributed,
+  donate,    // ← NEW: donateBucket
+  transfer,  // ← NEW: transferBetweenBuckets (both source and dest entries)
+  spend,     // ← NEW: withdrawFromBucket
+}
+```
+
+### Import
+
+```dart
+import 'package:kids_finance/features/buckets/domain/bucket_repository.dart';
+import 'package:kids_finance/features/buckets/domain/bucket.dart'; // for BucketType
+```
+
+### Firestore Rules Coverage
+
+No rule changes needed. Existing rules already:
+- Require parent auth for all bucket writes (`isParentOfFamily(familyId)`)
+- Enforce `balance >= 0` on every bucket update (`validBucketUpdate()`)
+- Allow transaction creates for parents (append-only log)
+
+### Offline Behavior
+
+All three methods enqueue to the offline queue when device is offline:
+- `donateBucket` → type `'donateBucket'`, payload `{childId, familyId}`; returns `0.0`
+- `transferBetweenBuckets` → type `'transfer'`, payload `{childId, familyId, from, to, amount}`
+- `withdrawFromBucket` → type `'withdraw'`, payload `{childId, familyId, amount}`
+
+Operations sync automatically when connectivity is restored via `SyncEngine`.
 
 ---
 

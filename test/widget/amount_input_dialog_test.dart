@@ -9,8 +9,6 @@ void main() {
   group('AmountInputDialog - Zero Amount Validation', () {
     testWidgets('Money dialog — submit button disabled when amount = 0', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -18,7 +16,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Add Money',
                       isMultiplier: false,
@@ -49,8 +47,6 @@ void main() {
 
     testWidgets('Money dialog — submit button disabled when amount field is empty', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -58,7 +54,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Add Money',
                       isMultiplier: false,
@@ -87,8 +83,6 @@ void main() {
 
     testWidgets('Money dialog — submit button enabled when amount > 0', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -96,7 +90,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Add Money',
                       isMultiplier: false,
@@ -127,8 +121,6 @@ void main() {
 
     testWidgets('Investment dialog — submit button disabled when multiplier = 0', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -136,7 +128,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Multiply Investment',
                       isMultiplier: true,
@@ -167,8 +159,6 @@ void main() {
 
     testWidgets('Investment dialog — submit button disabled when multiplier field is empty', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -176,7 +166,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Multiply Investment',
                       isMultiplier: true,
@@ -205,8 +195,6 @@ void main() {
 
     testWidgets('Investment dialog — submit button enabled when multiplier > 0', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -214,7 +202,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Multiply Investment',
                       isMultiplier: true,
@@ -245,8 +233,6 @@ void main() {
 
     testWidgets('Money dialog shows error message for zero amount', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -254,7 +240,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Add Money',
                       isMultiplier: false,
@@ -282,8 +268,6 @@ void main() {
 
     testWidgets('Investment dialog shows error message for zero multiplier', (tester) async {
       // Arrange
-      double? result;
-      
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -291,7 +275,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () async {
-                    result = await AmountInputDialog.show(
+                    await AmountInputDialog.show(
                       context,
                       title: 'Multiply Investment',
                       isMultiplier: true,
@@ -318,3 +302,4 @@ void main() {
     });
   });
 }
+

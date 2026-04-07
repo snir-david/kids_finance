@@ -1291,8 +1291,8 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Funds added successfully'),
+          SnackBar(
+            content: Text('✅ Added to ${widget.child.displayName}\'s buckets!'),
             backgroundColor: Colors.green,
           ),
         );

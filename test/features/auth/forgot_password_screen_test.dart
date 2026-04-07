@@ -5,18 +5,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'forgot_password_screen_test.mocks.dart';
+class _FakeFirebaseAuth extends Mock {
+  Future<void> sendPasswordResetEmail({
+    required String email,
+    ActionCodeSettings? actionCodeSettings,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendPasswordResetEmail,
+          [],
+          {#email: email, #actionCodeSettings: actionCodeSettings},
+        ),
+        returnValue: Future<void>.value(),
+        returnValueForMissingStub: Future<void>.value(),
+      ) as Future<void>);
+}
 
-@GenerateMocks([FirebaseAuth])
 void main() {
   group('ForgotPasswordScreen', () {
-    late MockFirebaseAuth mockAuth;
+    late _FakeFirebaseAuth mockAuth;
 
     setUp(() {
-      mockAuth = MockFirebaseAuth();
+      mockAuth = _FakeFirebaseAuth();
     });
 
     testWidgets('Screen renders email field + send button', (tester) async {
@@ -63,7 +75,6 @@ void main() {
     testWidgets('Submit with empty email — button disabled or shows validation', (tester) async {
       // Arrange
       bool isButtonEnabled = false;
-      String emailValue = '';
 
       await tester.pumpWidget(
         ProviderScope(
@@ -77,7 +88,6 @@ void main() {
                         key: const Key('email_field'),
                         onChanged: (value) {
                           setState(() {
-                            emailValue = value;
                             isButtonEnabled = value.isNotEmpty && value.contains('@');
                           });
                         },
@@ -106,7 +116,7 @@ void main() {
       const testEmail = 'test@example.com';
       bool emailSent = false;
 
-      when(mockAuth.sendPasswordResetEmail(email: anyNamed('email')))
+      when(mockAuth.sendPasswordResetEmail(email: testEmail))
           .thenAnswer((_) async {
         emailSent = true;
         return Future.value();
@@ -154,7 +164,7 @@ void main() {
       // Arrange
       const testEmail = 'test@example.com';
 
-      when(mockAuth.sendPasswordResetEmail(email: anyNamed('email')))
+      when(mockAuth.sendPasswordResetEmail(email: testEmail))
           .thenAnswer((_) async => Future.value());
 
       await tester.pumpWidget(
@@ -210,7 +220,7 @@ void main() {
       // Arrange
       const testEmail = 'invalid@example.com';
       
-      when(mockAuth.sendPasswordResetEmail(email: anyNamed('email')))
+      when(mockAuth.sendPasswordResetEmail(email: testEmail))
           .thenThrow(FirebaseAuthException(code: 'user-not-found'));
 
       await tester.pumpWidget(

@@ -1,9 +1,7 @@
 // TODO: wire up when OfflineStatusBanner widget is available (Rhodey will build this)
 // Testing TTL warning UI (Sprint 5B)
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:kids_finance/core/offline/widgets/offline_status_banner.dart';
 // import 'package:kids_finance/core/offline/providers/connectivity_provider.dart';
 // import 'package:kids_finance/core/offline/providers/pending_operations_provider.dart';

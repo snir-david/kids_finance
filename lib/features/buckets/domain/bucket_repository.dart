@@ -75,4 +75,37 @@ abstract class BucketRepository {
     double? baseValueInvestment,
     double? baseValueCharity,
   });
+
+  /// Donates the entire charity bucket balance.
+  /// Records a transaction of type [donate] on the charity bucket.
+  /// Sets charity balance to 0 and returns the donated amount.
+  Future<double> donateBucket(String familyId, String childId);
+
+  /// Moves [amount] from one bucket to another atomically.
+  /// Validates amount > 0 and that [from] bucket has sufficient balance.
+  /// Records two [transfer] transactions: one debit on [from], one credit on [to].
+  /// Throws [ArgumentError] if amount <= 0 or insufficient balance.
+  Future<void> transferBetweenBuckets(
+    String familyId,
+    String childId,
+    BucketType from,
+    BucketType to,
+    double amount,
+  );
+
+  /// Subtracts [amount] from the Money bucket (purchase simulation).
+  /// Validates amount > 0 and sufficient balance.
+  /// Records a transaction of type [spend] on the money bucket.
+  /// Throws [ArgumentError] if amount <= 0 or insufficient balance.
+  Future<void> withdrawFromBucket(String familyId, String childId, double amount);
+
+  /// Multiplies the given [bucketType]'s balance by [multiplier].
+  /// Infers performedByUid from current Firebase Auth user.
+  /// Throws [ArgumentError] if multiplier <= 0.
+  Future<void> multiplyBucket(
+    String familyId,
+    String childId,
+    BucketType bucketType,
+    double multiplier,
+  );
 }

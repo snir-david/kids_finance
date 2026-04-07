@@ -1,9 +1,7 @@
 // TODO: wire up when ConflictResolutionDialog widget is available (Rhodey will build this)
 // Testing conflict resolution UI (Sprint 5B)
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:kids_finance/core/offline/widgets/conflict_resolution_dialog.dart';
 // import 'package:kids_finance/core/offline/bucket_conflict.dart';
 // import 'package:kids_finance/core/offline/conflict_resolution.dart';

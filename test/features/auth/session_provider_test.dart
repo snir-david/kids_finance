@@ -2,7 +2,7 @@
 // Testing session expiry (Sprint 5C — Security)
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kids_finance/features/children/domain/child.dart';
 
 void main() {
   group('Session Expiry', () {

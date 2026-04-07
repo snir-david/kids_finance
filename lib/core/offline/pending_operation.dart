@@ -6,7 +6,7 @@ class PendingOperation extends HiveObject {
   String id;
 
   @HiveField(1)
-  String type; // 'setMoney' | 'addMoney' | 'removeMoney' | 'distribute' | 'multiply' | 'donate' | 'updateChild' | 'archiveChild'
+  String type; // 'setMoney' | 'addMoney' | 'removeMoney' | 'distribute' | 'multiply' | 'donate' | 'updateChild' | 'archiveChild' | 'donateBucket' | 'transfer' | 'withdraw'
 
   @HiveField(2)
   Map<String, dynamic> payload;

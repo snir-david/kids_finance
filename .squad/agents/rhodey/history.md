@@ -319,6 +319,65 @@ Fixed UX bug where only Money bucket had Add/Remove actions. Now all 3 buckets h
   - Zero-amount validation prevents invalid submissions
   - All three tasks from Sprint 5A Wave 1 delivered
 
+### 2026-04-09: Interactive Bucket Cards — Child Home Screen Tap Actions
+- **Status:** ✅ COMPLETE
+- **Requested by:** snirnahari
+
+**Deliverables:**
+
+1. **Tappable Bucket Cards** (`lib/features/auth/presentation/child_home_screen.dart`)
+   - All 3 bucket cards now wrapped in `GestureDetector` with `onTap` callback
+   - `_buildKidBucketCard` gains optional `VoidCallback? onTap` parameter
+   - Small `Icons.touch_app` hint icon rendered on tappable cards
+   - Taps open `showModalBottomSheet` with `RoundedRectangleBorder(top: Radius.circular(24))`
+
+2. **_CharitySheet** — new `StatefulWidget`
+   - Shows current charity balance
+   - "Donate All 🎁" `ElevatedButton` (pink, full-width)
+   - On success: inserts `OverlayEntry` with existing `CelebrationOverlay(type: CelebrationType.charity)` before popping sheet — hearts animation plays on main screen
+   - Zero-balance guard: SnackBar "No funds to donate! 😅" with red background
+   - Loading state: `CircularProgressIndicator` replaces button text
+
+3. **_InvestmentSheet** — new `StatefulWidget`
+   - Shows current savings balance
+   - **Draw to My Money section:** amount field (defaults to full balance), "Draw 💸" button → `transferBetweenBuckets(investment → money)`
+   - **Multiply section:** multiplier field (decimal), "Multiply 🚀" button → `multiplyBucket(investment, multiplier)`, inline error if ≤ 0
+   - Both sections visible simultaneously with `Divider` separation
+   - Separate loading states per action
+
+4. **_MoneySheet** — new `StatefulWidget`
+   - Shows current money balance
+   - **Section A:** "Send to Savings 📈" → `transferBetweenBuckets(money → investment)`
+   - **Section B:** "Send to Charity 🎁" → `transferBetweenBuckets(money → charity)`
+   - **Section C:** "Withdraw 💳" + "Simulate a purchase" label → `withdrawFromBucket`
+   - Three independent amount text fields and loading states
+
+5. **_SheetHandle** — reusable `StatelessWidget` (grey pill drag handle)
+
+6. **`_transactionDescription` fix** — added cases for `donate`, `transfer`, `spend` enum values making the switch expression exhaustive
+
+7. **`_buildDashboard` update** — reads `bucketRepositoryProvider` once, passes `onTap` callbacks wired to each sheet
+
+8. **`parent_home_screen.dart`** — updated success SnackBar to `'✅ Added to ${widget.child.displayName}\'s buckets!'`
+
+**Repository changes:**
+- `bucket_repository.dart`: added abstract `multiplyBucket(familyId, childId, BucketType, multiplier)` method
+- `firebase_bucket_repository.dart`: implemented `multiplyBucket` (delegates to existing Firestore transaction pattern, uses `investmentMultiplied` transaction type)
+
+**New imports added to child_home_screen.dart:**
+- `bucket_repository.dart` (for `BucketRepository` type in sheet constructors)
+- `celebration_overlay.dart` (for `CelebrationOverlay` + `CelebrationType`)
+
+**Flutter Analyze:** ✅ 0 issues (ran after all changes)
+
+**Architecture Compliance:**
+- No direct Firebase calls in UI (all via `BucketRepository`)
+- Balances auto-refresh via `StreamProvider` — no manual `ref.invalidate` needed
+- Celebration overlay uses existing `CelebrationOverlay` widget (no new dependencies)
+- Error handling via red SnackBar throughout
+- Loading states prevent double-submit
+
+
 ### 2026-04-08: Add Funds Dialog Redesign
 - **Status:** ✅ COMPLETE
 - **Delivered:**
