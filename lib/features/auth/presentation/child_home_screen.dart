@@ -513,14 +513,14 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
                   vertical: 8,
                 ),
                 title: Text(
-                  _transactionDescription(transaction),
+                  _transactionDescription(context, transaction),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 subtitle: Text(
-                  _formatDate(transaction.performedAt),
+                  _formatDate(context, transaction.performedAt),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -534,48 +534,53 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
     );
   }
 
-  String _transactionDescription(app_transaction.Transaction tx) {
+  String _transactionDescription(BuildContext context, app_transaction.Transaction tx) {
+    final l10n = AppLocalizations.of(context);
     final fmt = ref.read(currencyFormatterProvider);
     return switch (tx.type) {
       app_transaction.TransactionType.moneySet =>
-        '💰 Money set to ${fmt.formatAmount(tx.newBalance)}',
+        l10n.txMoneySet(fmt.formatAmount(tx.newBalance)),
       app_transaction.TransactionType.moneyAdded =>
-        '💰 Added ${fmt.formatAmount(tx.amount)} to Money',
+        l10n.txMoneyAdded(fmt.formatAmount(tx.amount)),
       app_transaction.TransactionType.moneyRemoved =>
-        '💰 Removed ${fmt.formatAmount(tx.amount)} from Money',
+        l10n.txMoneyRemoved(fmt.formatAmount(tx.amount)),
       app_transaction.TransactionType.investmentMultiplied =>
-        '📈 Savings ×${tx.multiplier?.toStringAsFixed(1) ?? '1'} = ${fmt.formatAmount(tx.newBalance)}',
+        l10n.txInvestmentMultiplied(
+          tx.multiplier?.toStringAsFixed(1) ?? '1',
+          fmt.formatAmount(tx.newBalance),
+        ),
       app_transaction.TransactionType.charityDonated =>
-        '❤️ Donated ${fmt.formatAmount(tx.previousBalance)} to charity!',
+        l10n.txCharityDonated(fmt.formatAmount(tx.previousBalance)),
       app_transaction.TransactionType.distributed =>
-        '🎁 Allowance split: ${fmt.formatAmount(tx.amount)} to ${tx.bucketType.name}',
+        l10n.txAllowanceSplit(fmt.formatAmount(tx.amount), l10n.bucketName(tx.bucketType.name)),
       app_transaction.TransactionType.donate =>
-        '❤️ Donated ${fmt.formatAmount(tx.amount)} to charity!',
+        l10n.txCharityDonated(fmt.formatAmount(tx.amount)),
       app_transaction.TransactionType.transfer =>
         tx.amount < 0
-          ? '🔄 Transferred ${fmt.formatAmount(tx.amount.abs())} from ${tx.bucketType.name}'
-          : '🔄 Received ${fmt.formatAmount(tx.amount)} in ${tx.bucketType.name}',
+          ? l10n.txTransferFrom(fmt.formatAmount(tx.amount.abs()), l10n.bucketName(tx.bucketType.name))
+          : l10n.txTransferTo(fmt.formatAmount(tx.amount), l10n.bucketName(tx.bucketType.name)),
       app_transaction.TransactionType.spend =>
-        '🛍️ Spent ${fmt.formatAmount(tx.amount)} from Money',
+        l10n.txSpend(fmt.formatAmount(tx.amount)),
     };
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {
-          return 'Just now';
+          return l10n.justNow;
         }
-        return '${difference.inMinutes}m ago';
+        return l10n.minutesAgo(difference.inMinutes);
       }
-      return '${difference.inHours}h ago';
+      return l10n.hoursAgo(difference.inHours);
     } else if (difference.inDays == 1) {
-      return 'Yesterday';
+      return l10n.yesterday;
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return l10n.daysAgo(difference.inDays);
     } else {
       return '${date.month}/${date.day}/${date.year}';
     }

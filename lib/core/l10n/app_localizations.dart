@@ -233,6 +233,41 @@ class AppLocalizations {
   String get bucketTransfer => isHebrew ? 'העברה בין קופסאות' : 'Bucket transfer';
   String get purchase => isHebrew ? 'קנייה' : 'Purchase';
 
+  // ─── Transaction descriptions (Recent Activity full sentences) ────────────
+  String txMoneySet(String amount) =>
+      isHebrew ? '💰 הכסף הוגדר ל-$amount' : '💰 Money set to $amount';
+  String txMoneyAdded(String amount) =>
+      isHebrew ? '💰 נוסף $amount לכסף' : '💰 Added $amount to Money';
+  String txMoneyRemoved(String amount) =>
+      isHebrew ? '💰 הוסר $amount מהכסף' : '💰 Removed $amount from Money';
+  String txInvestmentMultiplied(String mult, String balance) =>
+      isHebrew ? '📈 חסכונות ×$mult = $balance' : '📈 Savings ×$mult = $balance';
+  String txCharityDonated(String amount) =>
+      isHebrew ? '❤️ תרמת $amount לצדקה!' : '❤️ Donated $amount to charity!';
+  String txAllowanceSplit(String amount, String bucket) =>
+      isHebrew ? '🎁 דמי כיס: $amount ל$bucket' : '🎁 Allowance split: $amount to $bucket';
+  String txTransferFrom(String amount, String bucket) =>
+      isHebrew ? '🔄 הועבר $amount מ$bucket' : '🔄 Transferred $amount from $bucket';
+  String txTransferTo(String amount, String bucket) =>
+      isHebrew ? '🔄 התקבל $amount ב$bucket' : '🔄 Received $amount in $bucket';
+  String txSpend(String amount) =>
+      isHebrew ? '🛍️ הוצא $amount מהכסף' : '🛍️ Spent $amount from Money';
+
+  // ─── Bucket name localisation ──────────────────────────────────────────────
+  String bucketName(String type) => switch (type) {
+    'money'      => isHebrew ? 'כסף' : 'Money',
+    'investment' => isHebrew ? 'השקעות' : 'Investment',
+    'charity'    => isHebrew ? 'צדקה' : 'Charity',
+    _            => type,
+  };
+
+  // ─── Relative date strings ─────────────────────────────────────────────────
+  String get justNow => isHebrew ? 'עכשיו' : 'Just now';
+  String get yesterday => isHebrew ? 'אתמול' : 'Yesterday';
+  String minutesAgo(int m) => isHebrew ? 'לפני ${m}ד׳' : '${m}m ago';
+  String hoursAgo(int h) => isHebrew ? 'לפני ${h}ש׳' : '${h}h ago';
+  String daysAgo(int d) => isHebrew ? 'לפני $d ימים' : '${d}d ago';
+
   // ─── Parameterised helpers ─────────────────────────────────────────────────
   String hiName(String name) => isHebrew ? 'שלום $name! 👋' : 'Hi $name! 👋';
   String childHistory(String name) =>
