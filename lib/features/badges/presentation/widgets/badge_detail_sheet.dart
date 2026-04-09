@@ -143,7 +143,7 @@ class _BadgeDetailSheetState extends ConsumerState<BadgeDetailSheet> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(isEarned ? '⭐  Awesome!' : l10n.cancel),
+                child: Text(isEarned ? l10n.awesome : l10n.cancel),
               ),
             ),
           ],

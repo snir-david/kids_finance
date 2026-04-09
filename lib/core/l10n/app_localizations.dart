@@ -200,6 +200,11 @@ class AppLocalizations {
   // Parameterised badge helper
   String earnedOnDate(String date) =>
       isHebrew ? 'הושג ב $date' : 'Earned on $date';
+  String get seeAllBadges => isHebrew ? 'כל הפרסים' : 'See All';
+  String get allBadgesTitle => isHebrew ? 'הפרסים שלי' : 'My Badges';
+  String get badgesEarned => isHebrew ? 'פרסים שהושגו' : 'badges earned';
+  String get lockedBadge => isHebrew ? 'נעול' : 'Locked';
+  String get awesome => isHebrew ? '⭐  מדהים!' : '⭐  Awesome!';
 
   // ─── Currency ─────────────────────────────────────────────────────────────
   String get currency => isHebrew ? 'מטבע' : 'Currency';

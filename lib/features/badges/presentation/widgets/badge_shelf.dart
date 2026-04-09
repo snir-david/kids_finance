@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../data/models/badge_model.dart';
 import '../providers/badges_provider.dart';
@@ -49,6 +50,14 @@ class BadgeShelf extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () => context.push(
+                '/badges',
+                extra: (familyId: familyId, childId: childId),
+              ),
+              child: Text(l10n.seeAllBadges),
             ),
           ],
         ),
