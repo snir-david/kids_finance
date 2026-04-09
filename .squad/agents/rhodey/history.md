@@ -1,3 +1,32 @@
+## Multi-Currency Support (ILS/USD/EUR/GBP)
+
+**Status:** ✅ COMPLETE
+
+### Deliverables
+- **CurrencyNotifier + currencyProvider** — Riverpod 3.x `Notifier<AppCurrency>` with SharedPreferences persistence. Default: ILS (₪). Auto-loads on app start via `build()`.
+- **CurrencyFormatter utility** — `formatAmount(double)` with comma-separated thousands and sign handling. `currencyFormatterProvider` (Provider) watches `currencyProvider` for reactivity.
+- **Currency picker in Settings** — Radio-style tiles below Language/Theme sections for ILS/USD/EUR/GBP. Persisted immediately on tap.
+- **Replaced ALL hardcoded ₪/$ symbols** — 12 files updated; all money display strings now driven by `currencyFormatterProvider`.
+- **Hebrew l10n keys** — Added `currency`, `currencyIls`, `currencyUsd`, `currencyEur`, `currencyGbp`.
+
+### Files Changed (money formatting)
+- `lib/core/currency/currency_provider.dart` ← NEW
+- `lib/core/currency/currency_formatter.dart` ← NEW
+- `lib/core/l10n/app_localizations.dart` — 5 new keys
+- `lib/features/settings/presentation/settings_screen.dart` — currency section added
+- `lib/core/widgets/bucket_card.dart` — StatelessWidget → ConsumerWidget, NumberFormat.currency replaced
+- `lib/features/goals/presentation/widgets/goal_card.dart` — StatelessWidget → ConsumerWidget
+- `lib/features/goals/presentation/widgets/add_goal_dialog.dart` — StatefulWidget → ConsumerStatefulWidget, suffixText dynamic
+- `lib/features/buckets/presentation/widgets/bucket_action_sheets.dart` — all 3 sheets (Charity/Investment/Money) StatefulWidget → ConsumerStatefulWidget; balance displays + prefixText dynamic
+- `lib/features/transactions/presentation/transaction_history_screen.dart` — _TransactionTile → ConsumerWidget; balance change + new balance dynamic
+- `lib/features/auth/presentation/child_home_screen.dart` — total + bucket card balances + transaction descriptions dynamic
+- `lib/features/auth/presentation/parent_home_screen.dart` — _BucketCard → ConsumerWidget; bucket action dialog + distribute dialog dynamic
+- `lib/core/offline/widgets/conflict_resolution_dialog.dart` — conflict value rows dynamic
+
+**Quality:** 0 analyze issues. Debug APK build ✅.
+
+---
+
 ## 2026-04-07: Sprint 7D — Achievement Badges UI
 
 **Status:** ✅ COMPLETE
