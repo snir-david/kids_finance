@@ -226,29 +226,12 @@ class SyncEngine {
           note: p['note'] as String?,
         );
       case 'updateChild':
-        if (p.containsKey('pinHash')) {
-          await _childRepo.updatePinHash(
-            childId: childId,
-            familyId: familyId,
-            newPinHash: p['pinHash'] as String,
-          );
-          final hasOtherFields = p.containsKey('name') || p.containsKey('avatarEmoji');
-          if (hasOtherFields) {
-            await _childRepo.updateChild(
-              childId: childId,
-              familyId: familyId,
-              name: p['name'] as String?,
-              avatarEmoji: p['avatarEmoji'] as String?,
-            );
-          }
-        } else {
-          await _childRepo.updateChild(
-            childId: childId,
-            familyId: familyId,
-            name: p['name'] as String?,
-            avatarEmoji: p['avatarEmoji'] as String?,
-          );
-        }
+        await _childRepo.updateChild(
+          childId: childId,
+          familyId: familyId,
+          name: p['name'] as String?,
+          avatarEmoji: p['avatarEmoji'] as String?,
+        );
       case 'archiveChild':
         await _childRepo.archiveChild(
           familyId: familyId,

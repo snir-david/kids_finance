@@ -7,13 +7,13 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/family_setup_screen.dart';
 import '../features/auth/presentation/parent_home_screen.dart';
 import '../features/auth/presentation/child_home_screen.dart';
-import '../features/auth/presentation/child_pin_screen.dart';
 import '../features/auth/presentation/child_picker_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/auth/domain/app_user.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
+import '../features/badges/presentation/screens/badges_screen.dart';
 
 /// A [ChangeNotifier] that tells GoRouter to re-evaluate its redirect whenever
 /// the Firebase auth state or the user's Firestore role changes.
@@ -117,10 +117,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ChildPickerScreen(),
       ),
       GoRoute(
-        path: '/child-pin',
-        builder: (context, state) => const ChildPinScreen(),
-      ),
-      GoRoute(
         path: '/transaction-history',
         builder: (context, state) {
           final extra = state.extra as ({String childId, String familyId, String childName});
@@ -128,6 +124,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             childId: extra.childId,
             familyId: extra.familyId,
             childName: extra.childName,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/badges',
+        builder: (context, state) {
+          final extra = state.extra as ({String childId, String familyId});
+          return BadgesScreen(
+            childId: extra.childId,
+            familyId: extra.familyId,
           );
         },
       ),

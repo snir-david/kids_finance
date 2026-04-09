@@ -100,7 +100,6 @@ class FirebaseFamilyRepository implements FamilyRepository {
     required String familyId,
     required String displayName,
     required String avatarEmoji,
-    required String pinHash,
   }) async {
     final familyRef = _firestore.collection('families').doc(familyId);
     final childRef = familyRef.collection('children').doc();
@@ -111,8 +110,6 @@ class FirebaseFamilyRepository implements FamilyRepository {
       familyId: familyId,
       displayName: displayName,
       avatarEmoji: avatarEmoji,
-      pinHash: pinHash,
-      sessionExpiresAt: null,
       createdAt: now,
     );
 

@@ -25,7 +25,6 @@ import '../../goals/presentation/widgets/goal_card.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/auth_providers.dart';
-import '../providers/session_provider.dart';
 
 Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
   return Bucket(
@@ -56,25 +55,11 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Session expiry check — redirect to PIN if the 24-hour session has lapsed.
-    final sessionState = ref.watch(childSessionValidProvider);
-    if (sessionState == SessionState.expired) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          ref.read(activeChildProvider.notifier).setState(null);
-          context.go('/child-pin');
-        }
-      });
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final childId = ref.watch(activeChildProvider);
     
     if (childId == null) {
       return const Scaffold(
-        body: Center(child: Text('No child logged in')),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -111,7 +96,7 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
                 }
               },
               child: Scaffold(
-                backgroundColor: AppTheme.backgroundColor,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 appBar: AppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,

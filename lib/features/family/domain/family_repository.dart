@@ -25,6 +25,5 @@ abstract class FamilyRepository {
     required String familyId,
     required String displayName,
     required String avatarEmoji,
-    required String pinHash,
   });
 }

@@ -51,10 +51,6 @@ const _kAvatarEmojis = [
   '🐮', '🐷', '🦄', '🐙', '🦋', '🐠', '🦕',
 ];
 
-// PIN constraints
-const int _kMinPinLength = 4;
-const int _kMaxPinLength = 6;
-
 class ParentHomeScreen extends ConsumerStatefulWidget {
   const ParentHomeScreen({super.key});
 
@@ -910,8 +906,6 @@ class _AddChildDialog extends StatefulWidget {
 
 class _AddChildDialogState extends State<_AddChildDialog> {
   final _nameController = TextEditingController();
-  final _pinController = TextEditingController();
-  final _confirmPinController = TextEditingController();
   String _selectedEmoji = _kAvatarEmojis.first;
   bool _isLoading = false;
   String? _error;
@@ -919,26 +913,14 @@ class _AddChildDialogState extends State<_AddChildDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _pinController.dispose();
-    _confirmPinController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
-    final pin = _pinController.text.trim();
-    final confirmPin = _confirmPinController.text.trim();
 
     if (name.isEmpty) {
       setState(() => _error = 'Please enter a name');
-      return;
-    }
-    if (pin.length < _kMinPinLength || pin.length > _kMaxPinLength || !RegExp(r'^\d+$').hasMatch(pin)) {
-      setState(() => _error = 'PIN must be $_kMinPinLength–$_kMaxPinLength digits');
-      return;
-    }
-    if (pin != confirmPin) {
-      setState(() => _error = 'PINs do not match');
       return;
     }
 
@@ -948,14 +930,11 @@ class _AddChildDialogState extends State<_AddChildDialog> {
     });
 
     try {
-      final pinService = widget.ref.read(pinServiceProvider);
-      final pinHash = pinService.hashPin(pin);
       final repo = widget.ref.read(familyRepositoryProvider);
       await repo.addChild(
         familyId: widget.familyId,
         displayName: name,
         avatarEmoji: _selectedEmoji,
-        pinHash: pinHash,
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -1029,31 +1008,6 @@ class _AddChildDialogState extends State<_AddChildDialog> {
               }).toList(),
             ),
             const SizedBox(height: 16),
-
-            // PIN
-            TextField(
-              controller: _pinController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: _kMaxPinLength,
-              decoration: InputDecoration(
-                labelText: '${l10n.pin} ($_kMinPinLength–$_kMaxPinLength digits)',
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmPinController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: _kMaxPinLength,
-              decoration: InputDecoration(
-                labelText: l10n.confirmPin,
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
 
             if (_error != null) ...[
               const SizedBox(height: 12),
@@ -1713,8 +1667,6 @@ class _EditChildDialog extends StatefulWidget {
 class _EditChildDialogState extends State<_EditChildDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _emojiController;
-  final _newPinController = TextEditingController();
-  final _confirmPinController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
@@ -1729,16 +1681,12 @@ class _EditChildDialogState extends State<_EditChildDialog> {
   void dispose() {
     _nameController.dispose();
     _emojiController.dispose();
-    _newPinController.dispose();
-    _confirmPinController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
     final emoji = _emojiController.text.trim();
-    final newPin = _newPinController.text.trim();
-    final confirmPin = _confirmPinController.text.trim();
 
     if (name.isEmpty) {
       setState(() => _error = 'Please enter a name');
@@ -1748,18 +1696,6 @@ class _EditChildDialogState extends State<_EditChildDialog> {
     if (emoji.isEmpty) {
       setState(() => _error = 'Please enter an emoji');
       return;
-    }
-
-    // PIN validation only if they're trying to change it
-    if (newPin.isNotEmpty || confirmPin.isNotEmpty) {
-      if (newPin.length < _kMinPinLength || newPin.length > _kMaxPinLength || !RegExp(r'^\d+$').hasMatch(newPin)) {
-        setState(() => _error = 'PIN must be $_kMinPinLength–$_kMaxPinLength digits');
-        return;
-      }
-      if (newPin != confirmPin) {
-        setState(() => _error = 'PINs do not match');
-        return;
-      }
     }
 
     setState(() {
@@ -1775,7 +1711,6 @@ class _EditChildDialogState extends State<_EditChildDialog> {
         familyId: widget.familyId,
         name: name != widget.child.displayName ? name : null,
         avatarEmoji: emoji != widget.child.avatarEmoji ? emoji : null,
-        newPin: newPin.isNotEmpty ? newPin : null,
       );
 
       if (mounted) {
@@ -1900,40 +1835,6 @@ class _EditChildDialogState extends State<_EditChildDialog> {
             ),
             const SizedBox(height: 16),
 
-            const Divider(),
-            const SizedBox(height: 8),
-            Text(
-              l10n.changePinOptional,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _newPinController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: _kMaxPinLength,
-              decoration: InputDecoration(
-                labelText: '${l10n.pin} ($_kMinPinLength–$_kMaxPinLength digits)',
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _confirmPinController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              maxLength: _kMaxPinLength,
-              decoration: InputDecoration(
-                labelText: l10n.confirmPin,
-                border: const OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-
-            const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
 
