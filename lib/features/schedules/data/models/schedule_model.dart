@@ -104,6 +104,18 @@ class Schedule extends Equatable {
         createdAt: createdAt,
       );
 
+  /// Advance nextRunAt by one period after a completed run.
+  DateTime advanceNextRunAt() {
+    switch (frequency) {
+      case ScheduleFrequency.weekly:
+        return nextRunAt.add(const Duration(days: 7));
+      case ScheduleFrequency.biweekly:
+        return nextRunAt.add(const Duration(days: 14));
+      case ScheduleFrequency.monthly:
+        return DateTime(nextRunAt.year, nextRunAt.month + 1, dayOfWeek);
+    }
+  }
+
   @override
   List<Object?> get props => [
         id, childId, familyId, amount, frequency,
