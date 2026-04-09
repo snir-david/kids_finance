@@ -27,21 +27,6 @@ class _FakeChildRepository implements ChildRepository {
     required String familyId,
     String? name,
     String? avatarEmoji,
-    String? newPin,
-  }) async {}
-
-  @override
-  Future<void> updatePinHash({
-    required String childId,
-    required String familyId,
-    required String newPinHash,
-  }) async {}
-
-  @override
-  Future<void> updateSessionExpiry({
-    required String childId,
-    required String familyId,
-    required DateTime expiresAt,
   }) async {}
 
   @override

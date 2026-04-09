@@ -42,7 +42,6 @@ class _FakeFamilyRepository implements FamilyRepository {
     required String familyId,
     required String displayName,
     required String avatarEmoji,
-    required String pinHash,
   }) async =>
       throw UnimplementedError();
 }

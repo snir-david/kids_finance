@@ -11,7 +11,6 @@
 //   - Verifying archived children are excluded from the childrenProvider stream
 //   - Full widget test: archived child does not appear in parent home UI
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kids_finance/features/children/data/firebase_child_repository.dart';
@@ -237,33 +236,6 @@ void main() {
         childId: childId1,
         displayName: 'Alice',
       );
-    });
-
-    test('updateSessionExpiry: writes sessionExpiresAt as Firestore Timestamp',
-        () async {
-      final expiry = DateTime.now().add(const Duration(hours: 24));
-
-      await repository.updateSessionExpiry(
-        childId: childId1,
-        familyId: familyId,
-        expiresAt: expiry,
-      );
-
-      final doc = await fakeFirestore
-          .collection('families')
-          .doc(familyId)
-          .collection('children')
-          .doc(childId1)
-          .get();
-
-      final storedExpiry = doc.data()?['sessionExpiresAt'];
-      expect(storedExpiry, isNotNull);
-      // FakeFirebaseFirestore stores Timestamps; read back as DateTime
-      final storedDate = storedExpiry is Timestamp
-          ? storedExpiry.toDate()
-          : DateTime.parse(storedExpiry as String);
-      expect(storedDate.difference(expiry).abs().inSeconds, lessThan(2),
-          reason: 'Session expiry should be stored within 2 seconds of expected');
     });
   });
 
