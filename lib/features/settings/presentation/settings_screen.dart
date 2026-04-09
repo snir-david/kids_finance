@@ -5,6 +5,7 @@ import '../../../core/currency/currency_provider.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/tooltips/tooltip_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -59,6 +60,21 @@ class SettingsScreen extends ConsumerWidget {
             selected: ref.watch(currencyProvider) == c,
             onTap: () => ref.read(currencyProvider.notifier).setCurrency(c),
           )),
+          const Divider(),
+          // ─── Tips section ──────────────────────────────────────────────────
+          _SectionHeader(title: l10n.resetTooltips),
+          ListTile(
+            leading: const Icon(Icons.lightbulb_outline),
+            title: Text(l10n.resetTooltips),
+            onTap: () async {
+              await ref.read(tooltipProvider.notifier).resetAll();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.tooltipsReset)),
+                );
+              }
+            },
+          ),
         ],
       ),
     );

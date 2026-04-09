@@ -337,6 +337,26 @@ class AppLocalizations {
       isHebrew ? '$name הועבר לארכיון' : '$name has been archived';
   String currentBalance(String amount) =>
       isHebrew ? 'יתרה נוכחית: $amount' : 'Current balance: $amount';
+
+  // ─── Educational Tooltips ─────────────────────────────────────────────────
+  String get tooltipMoneyTitle => isHebrew ? '💰 הכסף שלי' : '💰 My Money';
+  String get tooltipMoneyBody => isHebrew
+      ? 'כאן נשמר הכסף שאתה יכול לקנות איתו דברים שאתה אוהב!'
+      : 'This is where you keep money to spend on things you love!';
+
+  String get tooltipInvestmentTitle => isHebrew ? '📈 חסכונות' : '📈 Savings';
+  String get tooltipInvestmentBody => isHebrew
+      ? 'כסף שחוסכים גדל עם הזמן — ככה בונים עתיד מדהים!'
+      : 'Money you save here grows over time — that\'s how you build an awesome future!';
+
+  String get tooltipCharityTitle => isHebrew ? '❤️ צדקה' : '❤️ Charity';
+  String get tooltipCharityBody => isHebrew
+      ? 'נותנים לאחרים ומרגישים טוב. אפילו קצת כסף יכול לשנות את העולם!'
+      : 'Giving to others feels amazing. Even a little money can change the world!';
+
+  String get tooltipDismiss => isHebrew ? 'הבנתי! 👍' : 'Got it! 👍';
+  String get resetTooltips => isHebrew ? 'איפוס הסברים' : 'Reset Tips';
+  String get tooltipsReset => isHebrew ? 'ההסברים אופסו' : 'Tips have been reset';
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

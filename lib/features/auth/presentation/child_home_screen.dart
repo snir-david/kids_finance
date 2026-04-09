@@ -24,6 +24,9 @@ import '../../goals/presentation/widgets/add_goal_dialog.dart';
 import '../../goals/presentation/widgets/goal_card.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
+import '../../schedules/presentation/providers/schedules_provider.dart';
+import '../../../core/tooltips/tooltip_provider.dart';
+import '../../buckets/presentation/widgets/bucket_tooltip_card.dart';
 import '../providers/auth_providers.dart';
 
 Bucket _createEmptyBucket(BucketType type, String childId, String familyId) {
@@ -238,6 +241,12 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
 
                     const SizedBox(height: 24),
 
+                    // Educational tooltip for My Money bucket
+                    BucketTooltipCard(
+                      tooltipKey: kTooltipMoney,
+                      color: AppTheme.moneyColor,
+                    ),
+
                     // Big Money bucket card
                     _buildKidBucketCard(
                       context,
@@ -252,6 +261,26 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
                     ),
 
                     const SizedBox(height: 16),
+
+                    // Investment and Charity side by side
+                    // Educational tooltips shown above the small buckets
+                    Row(
+                      children: [
+                        Expanded(
+                          child: BucketTooltipCard(
+                            tooltipKey: kTooltipInvestment,
+                            color: AppTheme.investmentsColor,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: BucketTooltipCard(
+                            tooltipKey: kTooltipCharity,
+                            color: AppTheme.charityColor,
+                          ),
+                        ),
+                      ],
+                    ),
 
                     // Investment and Charity side by side
                     Row(
@@ -302,6 +331,11 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
 
                     // Savings Goals section
                     _buildGoalsSection(context, familyId, childId, moneyBucket.balance),
+
+                    const SizedBox(height: 24),
+
+                    // Next allowance date
+                    _buildNextAllowance(context, familyId, childId),
 
                     const SizedBox(height: 24),
 
@@ -671,6 +705,81 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
           error: (_, __) => const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  // ─── Next Allowance ───────────────────────────────────────────────────────
+
+  Widget _buildNextAllowance(
+      BuildContext context, String familyId, String childId) {
+    final l10n = AppLocalizations.of(context);
+    final schedulesAsync = ref.watch(
+      schedulesProvider((familyId: familyId, childId: childId)),
+    );
+
+    return schedulesAsync.when(
+      data: (schedules) {
+        final active = schedules.where((s) => s.isActive).toList();
+        if (active.isEmpty) return const SizedBox.shrink();
+
+        // Show the soonest upcoming run
+        active.sort((a, b) => a.nextRunAt.compareTo(b.nextRunAt));
+        final next = active.first;
+        final formatter = ref.read(currencyFormatterProvider);
+        final amountStr = formatter.formatAmount(next.amount);
+
+        final now = DateTime.now();
+        final diff = next.nextRunAt.difference(now).inDays;
+        final whenStr = diff == 0
+            ? (l10n.isHebrew ? 'היום' : 'today')
+            : diff == 1
+                ? (l10n.isHebrew ? 'מחר' : 'tomorrow')
+                : (l10n.isHebrew ? 'בעוד $diff ימים' : 'in $diff days');
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Text('💰', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.allowanceSchedule,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimaryContainer,
+                        ),
+                  ),
+                  Text(
+                    '$amountStr $whenStr',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimaryContainer,
+                        ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
