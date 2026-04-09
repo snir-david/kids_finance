@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/currency/currency_formatter.dart';
+import '../../../core/currency/currency_provider.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/offline/sync_providers.dart';
 import '../../../core/offline/widgets/conflict_resolution_dialog.dart';
@@ -786,7 +788,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
 
 // ─── Sub-widgets ──────────────────────────────────────────────────────────────
 
-class _BucketCard extends StatelessWidget {
+class _BucketCard extends ConsumerWidget {
   const _BucketCard({
     required this.emoji,
     required this.name,
@@ -802,7 +804,8 @@ class _BucketCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(currencyFormatterProvider);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -846,7 +849,7 @@ class _BucketCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '\$${balance.toStringAsFixed(2)}',
+                      formatter.formatAmount(balance),
                       style: TextStyle(
                           fontSize: 22, fontWeight: FontWeight.w700, color: color),
                     ),
@@ -1190,7 +1193,7 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
               familyId: widget.familyId,
               multiplier: multiplier,
               performedByUid: widget.performedByUid,
-              note: note ?? 'Added \$${amount.toStringAsFixed(2)} via multiplier',
+              note: note ?? 'Added ${widget.ref.read(currencyFormatterProvider).formatAmount(amount)} via multiplier',
             );
           } else {
             setState(() => _error = 'Investment can only be multiplied, not removed directly');
@@ -1297,7 +1300,7 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
 
             // Current balance
             Text(
-              l10n.currentBalance('\$${currentBucket.balance.toStringAsFixed(2)}'),
+              l10n.currentBalance(widget.ref.read(currencyFormatterProvider).formatAmount(currentBucket.balance)),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
@@ -1312,7 +1315,9 @@ class _BucketActionDialogState extends State<_BucketActionDialog> {
               autofocus: true,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                prefixText: widget.mode == _BucketActionMode.add ? '+\$' : '-\$',
+                prefixText: widget.mode == _BucketActionMode.add
+                    ? '+${widget.ref.read(currencyProvider).symbol}'
+                    : '-${widget.ref.read(currencyProvider).symbol}',
                 hintText: '0.00',
                 labelText: l10n.amount,
                 border: const OutlineInputBorder(),
@@ -1465,16 +1470,17 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
     // All 3 filled: sum must match total
     if (_filledCount == 3 && (moneyAmt + investAmt + charityAmt - _totalAmount).abs() > 0.005) {
       final diff = _totalAmount - (moneyAmt + investAmt + charityAmt);
+      final fmt = widget.ref.read(currencyFormatterProvider);
       setState(() => _error =
-          'Bucket totals must equal \$${_totalAmount.toStringAsFixed(2)} '
-          '(${diff > 0 ? '\$${diff.toStringAsFixed(2)} remaining' : '\$${(-diff).toStringAsFixed(2)} over'})');
+          'Bucket totals must equal ${fmt.formatAmount(_totalAmount)} '
+          '(${diff > 0 ? '${fmt.formatAmount(diff)} remaining' : '${fmt.formatAmount(-diff)} over'})');
       return null;
     }
 
     // Partial fill: must not exceed total
     if (moneyAmt + investAmt + charityAmt > _totalAmount + 0.005) {
       setState(() => _error =
-          'Bucket totals exceed total by \$${(moneyAmt + investAmt + charityAmt - _totalAmount).toStringAsFixed(2)}');
+          'Bucket totals exceed total by ${widget.ref.read(currencyFormatterProvider).formatAmount(moneyAmt + investAmt + charityAmt - _totalAmount)}');
       return null;
     }
 
@@ -1531,6 +1537,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
   Widget build(BuildContext context) {
     final hasTotal = _totalAmount > 0;
     final l10n = AppLocalizations.of(context);
+    final currencySymbol = widget.ref.read(currencyProvider).symbol;
 
     return AlertDialog(
       title: Text(l10n.addFundsFor(widget.child.displayName)),
@@ -1550,7 +1557,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               autofocus: true,
               onChanged: (_) => _updateFields(),
               decoration: InputDecoration(
-                prefixText: '\$',
+                prefixText: currencySymbol,
                 hintText: '0.00',
                 labelText: l10n.totalAmount,
                 border: const OutlineInputBorder(),
@@ -1569,7 +1576,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
               decoration: InputDecoration(
-                prefixText: '\$',
+                prefixText: currencySymbol,
                 hintText: '0.00',
                 labelText: '💰 ${l10n.myMoney}',
                 border: const OutlineInputBorder(),
@@ -1582,7 +1589,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
               decoration: InputDecoration(
-                prefixText: '\$',
+                prefixText: currencySymbol,
                 hintText: '0.00',
                 labelText: '📈 ${l10n.investment}',
                 border: const OutlineInputBorder(),
@@ -1595,7 +1602,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (_) => _updateFields(),
               decoration: InputDecoration(
-                prefixText: '\$',
+                prefixText: currencySymbol,
                 hintText: '0.00',
                 labelText: '❤️ ${l10n.charity}',
                 border: const OutlineInputBorder(),
@@ -1629,7 +1636,7 @@ class _DistributeFundsDialogState extends State<_DistributeFundsDialog> {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    '\$${_remaining.abs().toStringAsFixed(2)}'
+                    '${widget.ref.read(currencyFormatterProvider).formatAmount(_remaining.abs())}'
                     '${_remaining > 0 ? ' left' : _remaining < 0 ? ' over' : ' ✓'}',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,

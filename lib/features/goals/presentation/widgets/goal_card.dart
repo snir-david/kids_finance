@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/goal_model.dart';
+import '../../../../../core/currency/currency_formatter.dart';
 import '../../../../../core/l10n/app_localizations.dart';
 
-class GoalCard extends StatelessWidget {
+class GoalCard extends ConsumerWidget {
   const GoalCard({
     super.key,
     required this.goal,
@@ -18,7 +20,8 @@ class GoalCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(currencyFormatterProvider);
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = goal.isCompleted;
@@ -114,7 +117,7 @@ class GoalCard extends StatelessWidget {
                 Text(
                   isCompleted
                       ? '🎉 ${l10n.goalReached}'
-                      : '${currentBalance.toStringAsFixed(0)}₪ / ${goal.targetAmount.toStringAsFixed(0)}₪',
+                      : '${formatter.formatAmount(currentBalance)} / ${formatter.formatAmount(goal.targetAmount)}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: isCompleted
@@ -124,7 +127,7 @@ class GoalCard extends StatelessWidget {
                 ),
                 if (!isCompleted)
                   Text(
-                    '${remaining.toStringAsFixed(0)}₪ ${l10n.toGo}',
+                    '${formatter.formatAmount(remaining)} ${l10n.toGo}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color:
                               Theme.of(context).colorScheme.onSurfaceVariant,

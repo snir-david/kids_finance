@@ -201,6 +201,13 @@ class AppLocalizations {
   String earnedOnDate(String date) =>
       isHebrew ? 'הושג ב $date' : 'Earned on $date';
 
+  // ─── Currency ─────────────────────────────────────────────────────────────
+  String get currency => isHebrew ? 'מטבע' : 'Currency';
+  String get currencyIls => isHebrew ? 'שקל ישראלי (₪)' : 'Israeli Shekel (₪)';
+  String get currencyUsd => isHebrew ? 'דולר אמריקאי (\$)' : 'US Dollar (\$)';
+  String get currencyEur => isHebrew ? 'אירו (€)' : 'Euro (€)';
+  String get currencyGbp => isHebrew ? 'לירה שטרלינג (£)' : 'British Pound (£)';
+
   // ─── Savings Goals ────────────────────────────────────────────────────────
   String get savingsGoals => isHebrew ? 'יעדי חיסכון' : 'Savings Goals';
   String get addGoal => isHebrew ? 'הוסף יעד' : 'Add Goal';

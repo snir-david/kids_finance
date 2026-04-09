@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/currency/currency_provider.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -50,6 +51,14 @@ class SettingsScreen extends ConsumerWidget {
             selected: currentTheme == ThemeMode.dark,
             onTap: () => ref.read(themeModeProvider.notifier).setMode(ThemeMode.dark),
           ),
+          const Divider(),
+          // ─── Currency section ──────────────────────────────────────────────
+          _SectionHeader(title: l10n.currency),
+          ...AppCurrency.values.map((c) => _ChoiceTile(
+            title: c.displayName,
+            selected: ref.watch(currencyProvider) == c,
+            onTap: () => ref.read(currencyProvider.notifier).setCurrency(c),
+          )),
         ],
       ),
     );

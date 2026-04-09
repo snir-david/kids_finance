@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/currency/currency_provider.dart';
 import '../../../../../core/l10n/app_localizations.dart';
 
-class AddGoalDialog extends StatefulWidget {
+class AddGoalDialog extends ConsumerStatefulWidget {
   const AddGoalDialog({
     super.key,
     required this.onSave,
@@ -13,10 +15,10 @@ class AddGoalDialog extends StatefulWidget {
   final Future<void> Function(String name, double targetAmount) onSave;
 
   @override
-  State<AddGoalDialog> createState() => _AddGoalDialogState();
+  ConsumerState<AddGoalDialog> createState() => _AddGoalDialogState();
 }
 
-class _AddGoalDialogState extends State<AddGoalDialog> {
+class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -56,6 +58,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currencySymbol = ref.watch(currencyProvider).symbol;
 
     return AlertDialog(
       title: Text(l10n.addGoal),
@@ -84,7 +87,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               decoration: InputDecoration(
                 labelText: l10n.targetAmount,
                 prefixIcon: const Icon(Icons.attach_money),
-                suffixText: '₪',
+                suffixText: currencySymbol,
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),

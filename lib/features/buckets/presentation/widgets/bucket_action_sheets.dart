@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/currency/currency_formatter.dart';
+import '../../../../core/currency/currency_provider.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/bucket.dart';
@@ -25,7 +28,7 @@ class SheetHandle extends StatelessWidget {
 
 // ─── Charity Bottom Sheet ─────────────────────────────────────────────────────
 
-class CharityActionSheet extends StatefulWidget {
+class CharityActionSheet extends ConsumerStatefulWidget {
   const CharityActionSheet({
     super.key,
     required this.familyId,
@@ -42,10 +45,10 @@ class CharityActionSheet extends StatefulWidget {
   final VoidCallback? onComplete;
 
   @override
-  State<CharityActionSheet> createState() => _CharityActionSheetState();
+  ConsumerState<CharityActionSheet> createState() => _CharityActionSheetState();
 }
 
-class _CharityActionSheetState extends State<CharityActionSheet> {
+class _CharityActionSheetState extends ConsumerState<CharityActionSheet> {
   bool _isLoading = false;
 
   Future<void> _onDonate() async {
@@ -107,7 +110,7 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${widget.charityBalance.toStringAsFixed(2)}',
+            ref.watch(currencyFormatterProvider).formatAmount(widget.charityBalance),
             style: TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.w900,
@@ -156,7 +159,7 @@ class _CharityActionSheetState extends State<CharityActionSheet> {
 
 // ─── Investment Bottom Sheet ──────────────────────────────────────────────────
 
-class InvestmentActionSheet extends StatefulWidget {
+class InvestmentActionSheet extends ConsumerStatefulWidget {
   const InvestmentActionSheet({
     super.key,
     required this.familyId,
@@ -173,10 +176,10 @@ class InvestmentActionSheet extends StatefulWidget {
   final VoidCallback? onComplete;
 
   @override
-  State<InvestmentActionSheet> createState() => _InvestmentActionSheetState();
+  ConsumerState<InvestmentActionSheet> createState() => _InvestmentActionSheetState();
 }
 
-class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
+class _InvestmentActionSheetState extends ConsumerState<InvestmentActionSheet> {
   late final TextEditingController _drawController;
   final TextEditingController _multiplierController = TextEditingController();
   bool _isDrawLoading = false;
@@ -299,7 +302,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                '\$${widget.investmentBalance.toStringAsFixed(2)}',
+                ref.watch(currencyFormatterProvider).formatAmount(widget.investmentBalance),
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
@@ -322,7 +325,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).amount,
-                prefixText: '\$',
+                prefixText: ref.watch(currencyProvider).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -409,7 +412,7 @@ class _InvestmentActionSheetState extends State<InvestmentActionSheet> {
 
 // ─── Money Bottom Sheet ───────────────────────────────────────────────────────
 
-class MoneyActionSheet extends StatefulWidget {
+class MoneyActionSheet extends ConsumerStatefulWidget {
   const MoneyActionSheet({
     super.key,
     required this.familyId,
@@ -426,10 +429,10 @@ class MoneyActionSheet extends StatefulWidget {
   final VoidCallback? onComplete;
 
   @override
-  State<MoneyActionSheet> createState() => _MoneyActionSheetState();
+  ConsumerState<MoneyActionSheet> createState() => _MoneyActionSheetState();
 }
 
-class _MoneyActionSheetState extends State<MoneyActionSheet> {
+class _MoneyActionSheetState extends ConsumerState<MoneyActionSheet> {
   final TextEditingController _investController = TextEditingController();
   final TextEditingController _charityController = TextEditingController();
   final TextEditingController _withdrawController = TextEditingController();
@@ -573,7 +576,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                '\$${widget.moneyBalance.toStringAsFixed(2)}',
+                ref.watch(currencyFormatterProvider).formatAmount(widget.moneyBalance),
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
@@ -596,7 +599,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).amount,
-                prefixText: '\$',
+                prefixText: ref.watch(currencyProvider).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -646,7 +649,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).amount,
-                prefixText: '\$',
+                prefixText: ref.watch(currencyProvider).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -701,7 +704,7 @@ class _MoneyActionSheetState extends State<MoneyActionSheet> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context).amount,
-                prefixText: '\$',
+                prefixText: ref.watch(currencyProvider).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

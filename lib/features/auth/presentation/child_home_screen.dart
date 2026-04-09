@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/currency/currency_formatter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/offline/widgets/offline_status_banner.dart';
 import '../../../core/theme/app_theme.dart';
@@ -159,6 +160,7 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
     String childId,
     String childName,
   ) {
+    final formatter = ref.watch(currencyFormatterProvider);
     final bucketsAsync = ref.watch(childBucketsProvider((
       childId: childId,
       familyId: familyId,
@@ -238,7 +240,7 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '\$${total.toStringAsFixed(2)}',
+                            formatter.formatAmount(total),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 40,
@@ -452,7 +454,7 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
             ),
             SizedBox(height: isLarge ? 8 : 4),
             Text(
-              '\$${balance.toStringAsFixed(2)}',
+              ref.read(currencyFormatterProvider).formatAmount(balance),
               style: TextStyle(
                 fontSize: isLarge ? 32 : 24,
                 fontWeight: FontWeight.w900,
@@ -548,27 +550,28 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
   }
 
   String _transactionDescription(app_transaction.Transaction tx) {
+    final fmt = ref.read(currencyFormatterProvider);
     return switch (tx.type) {
       app_transaction.TransactionType.moneySet =>
-        '💰 Money set to \$${tx.newBalance.toStringAsFixed(2)}',
+        '💰 Money set to ${fmt.formatAmount(tx.newBalance)}',
       app_transaction.TransactionType.moneyAdded =>
-        '💰 Added \$${tx.amount.toStringAsFixed(2)} to Money',
+        '💰 Added ${fmt.formatAmount(tx.amount)} to Money',
       app_transaction.TransactionType.moneyRemoved =>
-        '💰 Removed \$${tx.amount.toStringAsFixed(2)} from Money',
+        '💰 Removed ${fmt.formatAmount(tx.amount)} from Money',
       app_transaction.TransactionType.investmentMultiplied =>
-        '📈 Savings ×${tx.multiplier?.toStringAsFixed(1) ?? '1'} = \$${tx.newBalance.toStringAsFixed(2)}',
+        '📈 Savings ×${tx.multiplier?.toStringAsFixed(1) ?? '1'} = ${fmt.formatAmount(tx.newBalance)}',
       app_transaction.TransactionType.charityDonated =>
-        '❤️ Donated \$${tx.previousBalance.toStringAsFixed(2)} to charity!',
+        '❤️ Donated ${fmt.formatAmount(tx.previousBalance)} to charity!',
       app_transaction.TransactionType.distributed =>
-        '🎁 Allowance split: \$${tx.amount.toStringAsFixed(2)} to ${tx.bucketType.name}',
+        '🎁 Allowance split: ${fmt.formatAmount(tx.amount)} to ${tx.bucketType.name}',
       app_transaction.TransactionType.donate =>
-        '❤️ Donated \$${tx.amount.toStringAsFixed(2)} to charity!',
+        '❤️ Donated ${fmt.formatAmount(tx.amount)} to charity!',
       app_transaction.TransactionType.transfer =>
         tx.amount < 0
-          ? '🔄 Transferred \$${tx.amount.abs().toStringAsFixed(2)} from ${tx.bucketType.name}'
-          : '🔄 Received \$${tx.amount.toStringAsFixed(2)} in ${tx.bucketType.name}',
+          ? '🔄 Transferred ${fmt.formatAmount(tx.amount.abs())} from ${tx.bucketType.name}'
+          : '🔄 Received ${fmt.formatAmount(tx.amount)} in ${tx.bucketType.name}',
       app_transaction.TransactionType.spend =>
-        '🛍️ Spent \$${tx.amount.toStringAsFixed(2)} from Money',
+        '🛍️ Spent ${fmt.formatAmount(tx.amount)} from Money',
     };
   }
 

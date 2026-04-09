@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/currency/currency_formatter.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../buckets/domain/bucket.dart';
@@ -69,13 +70,14 @@ class TransactionHistoryScreen extends ConsumerWidget {
   }
 }
 
-class _TransactionTile extends StatelessWidget {
+class _TransactionTile extends ConsumerWidget {
   const _TransactionTile({required this.transaction});
   final app_transaction.Transaction transaction;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final formatter = ref.watch(currencyFormatterProvider);
     final info = _transactionInfo(transaction, l10n);
     final dateStr = DateFormat('MMM d, yyyy • h:mm a').format(transaction.performedAt);
     final balanceChange = transaction.newBalance - transaction.previousBalance;
@@ -140,7 +142,7 @@ class _TransactionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${isPositive ? '+' : ''}\$${balanceChange.abs().toStringAsFixed(2)}',
+                  '${isPositive ? '+' : ''}${formatter.formatAmount(balanceChange.abs())}',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -149,7 +151,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '→ \$${transaction.newBalance.toStringAsFixed(2)}',
+                  '→ ${formatter.formatAmount(transaction.newBalance)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade500,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../currency/currency_formatter.dart';
 import '../conflict.dart';
 import '../sync_providers.dart';
 
@@ -14,6 +15,7 @@ class ConflictResolutionDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bucketName = _bucketDisplayName(conflict.bucketType);
+    final formatter = ref.watch(currencyFormatterProvider);
 
     return AlertDialog(
       title: Text('Sync Conflict — $bucketName Bucket'),
@@ -27,9 +29,9 @@ class ConflictResolutionDialog extends ConsumerWidget {
             style: TextStyle(fontSize: 14),
           ),
           const SizedBox(height: 16),
-          _buildValueRow('Your change:', conflict.localValue),
+          _buildValueRow('Your change:', conflict.localValue, formatter),
           const SizedBox(height: 8),
-          _buildValueRow('Current value:', conflict.serverValue),
+          _buildValueRow('Current value:', conflict.serverValue, formatter),
         ],
       ),
       actions: [
@@ -51,12 +53,12 @@ class ConflictResolutionDialog extends ConsumerWidget {
     );
   }
 
-  Widget _buildValueRow(String label, double value) {
+  Widget _buildValueRow(String label, double value, CurrencyFormatter formatter) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        Text('\$${value.toStringAsFixed(2)}', 
+        Text(formatter.formatAmount(value),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );

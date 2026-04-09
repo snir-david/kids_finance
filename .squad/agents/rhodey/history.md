@@ -864,3 +864,34 @@ Added `isCompleted` getter and `progressPercent(double currentBalance)` method t
 - JARVIS's GoalRepository uses positional parameters: `createGoal(familyId, childId, name, amount)` — not named record params
 - `goalsProvider` record param is `({String familyId, String childId})`
 - Celebration guard using a mutable `Set<String>` field (no setState needed) is safe — the set just prevents re-scheduling, no layout rebuild required
+
+## 2026-04-09: Multi-Currency Support
+
+**Status:** ✅ COMPLETE
+
+### Deliverables
+- **CurrencyNotifier + currencyProvider** — NotifierProvider<CurrencyNotifier, AppCurrency> persisted via SharedPreferences. Default currency: ILS (₪ — Israeli convention).
+- **AppCurrencyExtension** — symbol, displayName, and ormat(amount) methods. ILS places symbol after number (50.00₪); USD/EUR/GBP place before (\.00, €50.00, £50.00).
+- **CurrencyFormatter + currencyFormatterProvider** — convenience Provider<CurrencyFormatter> with thousand-separator support, used across all display widgets.
+- **Currency selector in Settings** — 4-option radio list (ILS, USD, EUR, GBP) using existing _ChoiceTile pattern. Persists selection.
+- **All hardcoded money displays replaced** — Every \$, ₪, and 	oStringAsFixed(2) money string now routes through currencyFormatterProvider.
+
+**Localization:** 5 keys added — currency, currencyIls, currencyUsd, currencyEur, currencyGbp (EN + HE).
+
+**Quality:** 0 analyze issues.
+
+### Key Files
+- Created: `lib/core/currency/currency_provider.dart` (AppCurrency enum, CurrencyNotifier, currencyProvider)
+- Created: `lib/core/currency/currency_formatter.dart` (CurrencyFormatter, currencyFormatterProvider)
+- Modified: `lib/features/settings/presentation/settings_screen.dart` (currency selector)
+- Modified: `lib/core/l10n/app_localizations.dart` (5 currency l10n keys)
+- Modified: `lib/features/auth/presentation/child_home_screen.dart` (currency formatting)
+- Modified: `lib/features/auth/presentation/parent_home_screen.dart` (currency formatting)
+- Modified: `lib/features/buckets/presentation/widgets/bucket_action_sheets.dart` (ConsumerStatefulWidget + currency)
+- Modified: `lib/features/goals/presentation/widgets/goal_card.dart` (ConsumerWidget + currency)
+- Modified: `lib/features/goals/presentation/widgets/add_goal_dialog.dart` (ConsumerStatefulWidget + currency)
+- Modified: `lib/features/transactions/presentation/transaction_history_screen.dart` (ConsumerWidget + currency)
+- Modified: `lib/core/offline/widgets/conflict_resolution_dialog.dart` (currency formatting)
+- Modified: `lib/core/widgets/bucket_card.dart` (ConsumerWidget + currency)
+
+---

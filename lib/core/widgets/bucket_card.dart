@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/buckets/domain/bucket.dart';
+import '../currency/currency_formatter.dart';
 import '../theme/app_theme.dart';
 
-class BucketCard extends StatelessWidget {
+class BucketCard extends ConsumerWidget {
   const BucketCard({
     super.key,
     required this.bucket,
@@ -49,17 +50,13 @@ class BucketCard extends StatelessWidget {
     }
   }
 
-  String _formatBalance(double balance) {
-    final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    return formatter.format(balance);
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatter = ref.watch(currencyFormatterProvider);
     final color = _getBucketColor();
     final emoji = _getBucketEmoji();
     final label = _getBucketLabel();
-    final balanceText = _formatBalance(bucket.balance);
+    final balanceText = formatter.formatAmount(bucket.balance);
 
     if (isKidMode) {
       // Kid Mode: big card, large emoji (64px), bold balance, rounded corners, animated
