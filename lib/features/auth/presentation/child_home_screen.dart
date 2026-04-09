@@ -25,6 +25,8 @@ import '../../goals/presentation/widgets/goal_card.dart';
 import '../../transactions/domain/transaction.dart' as app_transaction;
 import '../../transactions/providers/transaction_providers.dart';
 import '../../schedules/presentation/providers/schedules_provider.dart';
+import '../../schedules/presentation/providers/multiply_rules_provider.dart';
+import '../../schedules/presentation/widgets/growth_projection_chart.dart';
 import '../../../core/tooltips/tooltip_provider.dart';
 import '../../buckets/presentation/widgets/bucket_tooltip_card.dart';
 import '../providers/auth_providers.dart';
@@ -316,6 +318,9 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
                     ),
 
                     const SizedBox(height: 24),
+
+                    // Growth projection chart (shows if active multiply rules exist)
+                    _buildGrowthChart(context, familyId, childId, investmentBucket.balance),
 
                     // Recent transactions
                     transactionsAsync.when(
@@ -780,6 +785,30 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
       },
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildGrowthChart(
+      BuildContext context, String familyId, String childId, double investmentBalance) {
+    final rulesAsync = ref.watch(
+      multiplyRulesProvider((familyId: familyId, childId: childId)),
+    );
+    final currencyFormatter = ref.watch(currencyFormatterProvider);
+
+    return rulesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (rules) {
+        if (rules.isEmpty || investmentBalance <= 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: GrowthProjectionChart(
+            currentBalance: investmentBalance,
+            rules: rules,
+            formatter: currencyFormatter,
+          ),
+        );
+      },
     );
   }
 

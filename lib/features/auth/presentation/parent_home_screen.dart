@@ -20,8 +20,12 @@ import '../../family/providers/family_providers.dart';
 import '../../goals/presentation/providers/goals_provider.dart';
 import '../../schedules/data/repositories/schedule_repository_provider.dart';
 import '../../schedules/data/models/schedule_model.dart';
+import '../../schedules/data/repositories/multiply_rule_repository_provider.dart';
+import '../../schedules/data/models/multiply_rule_model.dart';
 import '../../schedules/presentation/providers/schedules_provider.dart';
+import '../../schedules/presentation/providers/multiply_rules_provider.dart';
 import '../../schedules/presentation/widgets/add_schedule_dialog.dart';
+import '../../schedules/presentation/widgets/add_multiply_rule_dialog.dart';
 import '../providers/auth_providers.dart';
 
 /// Notifier for selected child ID in parent dashboard
@@ -73,6 +77,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _conflictSubscription = showConflictDialogIfNeeded(context, ref);
       _processOverdueAllowances();
+      _processOverdueMultiplyRules();
     });
   }
 
@@ -103,9 +108,15 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
           ),
         );
       }
-    } catch (_) {
-      // Best-effort; do not disrupt the UI on failure.
-    }
+    } catch (_) {}
+  }
+
+  Future<void> _processOverdueMultiplyRules() async {
+    try {
+      final familyId = ref.read(currentFamilyIdProvider).value;
+      if (familyId == null || familyId.isEmpty) return;
+      await ref.read(multiplyRuleRepositoryProvider).processOverdueRules(familyId);
+    } catch (_) {}
   }
 
   @override
@@ -617,6 +628,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
 
               // Allowance schedule section
               _buildAllowanceSection(context, familyId, child),
+              _buildMultiplyRulesSection(context, familyId, child),
             ],
           ),
         );
@@ -916,6 +928,91 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.scheduleAdded)),
       );
+    }
+  }
+
+  Widget _buildMultiplyRulesSection(
+      BuildContext context, String familyId, Child child) {
+    final l10n = AppLocalizations.of(context);
+    final rulesAsync = ref.watch(
+      multiplyRulesProvider((familyId: familyId, childId: child.id)),
+    );
+
+    return rulesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (rules) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(l10n.multiplyRules,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      )),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add, size: 20),
+                tooltip: l10n.addMultiplyRule,
+                onPressed: () =>
+                    _showAddMultiplyRuleDialog(context, familyId, child.id),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          if (rules.isEmpty)
+            GestureDetector(
+              onTap: () =>
+                  _showAddMultiplyRuleDialog(context, familyId, child.id),
+              child: Text(
+                l10n.noMultiplyRules,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            )
+          else
+            ...rules.map((rule) => ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading:
+                      const Icon(Icons.trending_up, color: Colors.blue, size: 20),
+                  title: Text(
+                    '+${rule.multiplierPercent.toStringAsFixed(1)}% ${l10n.frequencyLabel(rule.frequency.name)}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    onPressed: () async {
+                      await ref
+                          .read(multiplyRuleRepositoryProvider)
+                          .deleteRule(familyId, rule.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.multiplyRuleDeleted)),
+                        );
+                      }
+                    },
+                  ),
+                )),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMultiplyRuleDialog(
+      BuildContext context, String familyId, String childId) async {
+    final l10n = AppLocalizations.of(context);
+    final added = await showDialog<bool>(
+      context: context,
+      builder: (ctx) =>
+          AddMultiplyRuleDialog(familyId: familyId, childId: childId),
+    );
+    if (added == true && context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.multiplyRuleAdded)));
     }
   }
 

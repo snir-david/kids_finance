@@ -369,6 +369,26 @@ class AppLocalizations {
   String get typeDonation => isHebrew ? 'תרומות' : 'Donations';
   String get typeMultiply => isHebrew ? 'כפלים' : 'Multiplied';
   String get typeAllowance => isHebrew ? 'דמי כיס' : 'Allowances';
+
+  // ─── Multiply Rules ───────────────────────────────────────────────────────
+  String get multiplyRules => isHebrew ? 'כללי כפל' : 'Growth Rules';
+  String get addMultiplyRule => isHebrew ? 'הוסף כלל כפל' : 'Add Growth Rule';
+  String get multiplierPercent => isHebrew ? 'אחוז צמיחה' : 'Growth %';
+  String get growthProjection => isHebrew ? 'תחזית צמיחה' : 'Growth Projection';
+  String get projectedBalance => isHebrew ? 'יתרה צפויה' : 'Projected Balance';
+  String get noMultiplyRules => isHebrew
+      ? 'אין כללי כפל. הוסף כלל כדי לראות צמיחה!'
+      : 'No growth rules yet. Add one to see your savings grow!';
+  String get multiplyRuleAdded =>
+      isHebrew ? 'כלל צמיחה נוסף!' : 'Growth rule added!';
+  String get multiplyRuleDeleted =>
+      isHebrew ? 'כלל צמיחה נמחק' : 'Growth rule deleted';
+  String growsBy(String pct, String freq) => isHebrew
+      ? 'גדל ב-$pct% $freq'
+      : 'Grows +$pct% $freq';
+  String get projectionMonths => isHebrew ? '12 חודשים קדימה' : '12 months ahead';
+  String get now_ => isHebrew ? 'עכשיו' : 'Now';
+  String monthLabel(int m) => isHebrew ? 'ח׳$m' : 'M$m';
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -143,6 +143,16 @@ service cloud.firestore {
         allow update: if isParentOfFamily(familyId);
         allow delete: if isParentOfFamily(familyId);
       }
+
+      // ── Multiply (Growth) Rules ───────────────────────────────────────────
+      // Only parents can manage investment growth rules.
+
+      match /multiplyRules/{ruleId} {
+        allow read: if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId);
+        allow update: if isParentOfFamily(familyId);
+        allow delete: if isParentOfFamily(familyId);
+      }
     }
 
     // ── Deny everything else ──────────────────────────────────────────────────

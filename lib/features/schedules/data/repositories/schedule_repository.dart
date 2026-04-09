@@ -15,4 +15,7 @@ abstract class ScheduleRepository {
       String familyId, String scheduleId, bool isActive);
 
   Future<void> deleteSchedule(String familyId, String scheduleId);
+
+  /// Client-side allowance distribution — no Cloud Function needed.
+  Future<int> processOverdueAllowances(String familyId);
 }
