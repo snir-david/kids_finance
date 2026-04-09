@@ -2,17 +2,21 @@
 
 Android app (Flutter + Firebase) for kids' financial literacy.
 
-## Current Status (Sprint 5 Complete)
+## Current Status (Sprint 7D Complete)
 
 ### What's Working
-- ✅ **Authentication:** Email/password login, Google Sign-In, forgot password
+- ✅ **Authentication:** Email/password login, forgot password
 - ✅ **Family Management:** Create family, join via invite code, multi-parent support
-- ✅ **Child Management:** Add/edit/archive children with emoji avatars
+- ✅ **Child Management:** Add/edit/archive children with emoji avatars; kids tap avatar to enter child mode (no PIN required)
 - ✅ **Three-Bucket System:** Money, Investment, Charity with full CRUD
-- ✅ **Allowance Distribution:** Split funds across buckets with celebration animations
-- ✅ **PIN Authentication:** 4-6 digit PIN with brute-force lockout (5 tries → 15min)
-- ✅ **Offline Sync:** Hive queue with 24h TTL, conflict resolution dialog
-- ✅ **Security:** JWT spoofing fix, 24h session expiry, Firestore rules hardening
+- ✅ **Allowance Distribution:** Split funds across buckets (default 70/20/10) with celebration animations
+- ✅ **Savings Goals:** Named goals with progress bar, completion celebration, confetti
+- ✅ **Achievement Badges:** 6 badge types awarded automatically; full badge grid screen
+- ✅ **Multi-Currency:** ILS (default), USD, EUR, GBP — stored in SharedPreferences
+- ✅ **Dark Theme:** System-aware toggle via Settings; full dark mode support
+- ✅ **Hebrew Support:** Full RTL Hebrew localization across all screens
+- ✅ **Offline Sync:** Hive queue with conflict resolution dialog
+- ✅ **Security:** JWT spoofing fix, Firestore rules hardening, badge/goal rules deployed
 
 ### What Requires Configuration
 - Firebase project with Authentication and Firestore enabled
@@ -30,11 +34,14 @@ Three buckets per child:
 
 - Multi-child support: Each family can have 1–N children
 - Multi-parent support: 2+ parents can manage the same family
-- Parents control all bucket values
-- Children have read-only access via PIN authentication
+- Parents control all bucket values; children have read-only access
+- Savings goals with progress tracking and completion celebration
+- Achievement badge system (6 types, auto-awarded)
+- Multi-currency support: ILS, USD, EUR, GBP
+- Dark theme + Hebrew RTL localization
 - Investment multiplier system (parent-controlled)
 - Offline-first with automatic sync when connectivity returns
-- Celebration animations for investments and donations
+- Celebration animations for investments, donations, and badge unlocks
 
 ## Tech Stack
 
@@ -54,17 +61,22 @@ lib/
 ├── app.dart                     # MaterialApp.router setup
 ├── core/                        # Shared utilities
 │   ├── constants/              # App-wide constants
+│   ├── currency/               # CurrencyNotifier + CurrencyFormatter
 │   ├── errors/                 # Exception classes
 │   ├── extensions/             # Dart extensions
-│   ├── theme/                  # Themes (kid & parent modes)
-│   ├── utils/                  # Helpers, formatters
+│   ├── l10n/                   # Manual AppLocalizations (EN + HE)
+│   ├── offline/                # Hive offline queue + sync engine
+│   ├── theme/                  # AppTheme (light/dark) + ThemeModeNotifier
 │   └── widgets/                # Reusable widgets
 ├── routing/                     # GoRouter configuration
 ├── features/                    # Feature modules
-│   ├── auth/                   # Authentication
-│   ├── family/                 # Family management
+│   ├── auth/                   # Parent auth + child picker
+│   ├── badges/                 # BadgeShelf, BadgesScreen, BadgeEvaluationService
+│   ├── buckets/                # Bucket system + action sheets
 │   ├── children/               # Child management
-│   ├── buckets/                # Bucket system
+│   ├── family/                 # Family management
+│   ├── goals/                  # Savings goals
+│   ├── settings/               # Theme, locale, currency settings
 │   └── transactions/           # Transaction history
 ```
 

@@ -2,7 +2,7 @@
 
 **Author:** Fury (Security & Auth Specialist)  
 **Date:** 2026-04-05  
-**Updated:** 2026-04-08 (Sprint 5D Complete)  
+**Updated:** 2026-04-09 (Sprint 7D — Child PIN removed)  
 **Status:** ✅ IMPLEMENTED
 
 ---
@@ -16,7 +16,9 @@ KidsFinance uses a **two-tier authentication system** that separates parent and 
 | Tier | User Type | Method | Backend | Session |
 |------|-----------|--------|---------|---------|
 | 1 | Parent | Firebase Auth (Email/Password) | Firebase Auth | Persistent |
-| 2 | Child | Local PIN (bcrypt) | Firestore only | 24h expiry |
+| 2 | Child | Tap avatar (no credentials) | None — uses parent's session | App lifetime |
+
+> **Note (Sprint 7D):** Child PIN authentication was removed. Children access their screen by tapping their avatar on the `ChildPickerScreen`. Security is maintained because the child picker is only reachable from the `ParentHomeScreen`, which already requires full Firebase Auth authentication.
 
 ### Parent Authentication (Tier 1)
 **Method:** Firebase Authentication with Email/Password
@@ -32,18 +34,18 @@ KidsFinance uses a **two-tier authentication system** that separates parent and 
 - `lib/features/auth/presentation/forgot_password_screen.dart` — Password reset
 - `functions/src/index.ts::onSetCustomClaims` — JWT claim sync
 
-### Child Authentication (Tier 2)
-**Method:** Local PIN verification with bcrypt hashing
+### Child Access (Tier 2)
+**Method:** Avatar tap — no credentials required
 - Children do NOT have Firebase Auth accounts
-- PIN is 4–6 digits, stored as bcrypt hash in Firestore (`/families/{familyId}/children/{childId}/pinHash`)
-- PIN verification happens client-side via `BCrypt.checkpw()` (no Cloud Function call)
-- On successful PIN entry, session created with **24-hour expiry**
+- Child accesses their screen by tapping avatar on `ChildPickerScreen`
+- `activeChildProvider` (Riverpod `StateProvider`) stores the selected child's ID in memory
+- Session lasts as long as the app is in the foreground / parent doesn't log out
+- Parent tapping "Back to Parent" clears `activeChildProvider` and returns to parent home
 
 **Implementation Files:**
-- `lib/features/auth/data/pin_service.dart` — PIN hash/verify, session management
-- `lib/features/auth/data/pin_attempt_tracker.dart` — Brute-force protection
-- `lib/features/auth/presentation/child_pin_screen.dart` — PIN entry UI
-- `lib/features/auth/presentation/child_picker_screen.dart` — Child selection
+- `lib/features/auth/presentation/child_picker_screen.dart` — Avatar selection → sets `activeChildProvider`
+- `lib/features/auth/presentation/child_home_screen.dart` — Child-facing UI (read-only)
+- `lib/features/auth/providers/session_provider.dart` — `SessionState` based on `activeChildProvider != null`
 
 ### Session Management
 
@@ -52,36 +54,9 @@ KidsFinance uses a **two-tier authentication system** that separates parent and 
 - Token refresh handled automatically by Firebase SDK
 
 **Child Sessions:**
-- 24-hour expiry stored in TWO places for redundancy:
-  1. **Local:** `FlutterSecureStorage` key `child_session_{childId}` — fast read
-  2. **Firestore:** `sessionExpiresAt` field on child document — enforced by `childSessionValidProvider`
-- Every child-mode screen watches `childSessionValidProvider` and redirects to PIN on expiry
-- Session cleared on logout or parent-initiated reset
-
-### PIN Brute-Force Protection
-
-**Lockout Policy (implemented in `PinAttemptTracker`):**
-- **Max attempts:** 5 consecutive failures
-- **Lockout duration:** 15 minutes
-- **State persistence:** `FlutterSecureStorage` (survives app restart/force-close)
-- **Auto-clear:** Lockout expires automatically; successful login resets counter
-
-**Flow:**
-```
-Attempt 1-4: Wrong PIN → "X attempts remaining"
-Attempt 5:   Wrong PIN → PinLockoutException thrown → 15min lockout
-During lockout: PinLocked result returned immediately (no Firestore call)
-After lockout: Counter reset, user can try again
-```
-
-### Forgot Password Flow
-
-**Implemented:** Parent-only password reset via Firebase Auth
-1. User taps "Forgot Password?" on login screen
-2. Navigate to `ForgotPasswordScreen`
-3. Enter email → `FirebaseAuth.instance.sendPasswordResetEmail()`
-4. Success: SnackBar + navigate back to login
-5. Error handling: user-not-found, invalid-email, too-many-requests
+- In-memory only: `activeChildProvider` holds the currently selected child ID
+- No expiry — cleared when parent navigates back or app is closed
+- `PopScope(canPop: false)` on child home prevents back-button bypass
 
 ---
 
@@ -272,9 +247,12 @@ function validBucketUpdate() {
 
 function validChildCreate() {
   let d = request.resource.data;
-  return d.keys().hasAll(['displayName', 'avatarEmoji', 'pinHash', 'familyId', 'createdAt'])
+  return d.keys().hasAll(['displayName', 'avatarEmoji', 'familyId', 'createdAt'])
       && d.displayName.size() > 0 && d.displayName.size() <= 50;
 }
+
+// Note: pinHash field is no longer required. Existing child documents may still have it
+// for backward compatibility, but new children are created without it.
 ```
 
 ---
@@ -313,25 +291,18 @@ function validChildCreate() {
 4. **Success:** SnackBar notification, navigate back
 5. **User checks email, clicks reset link, sets new password**
 
-### 5.4 Child Login (PIN-Based)
+### 5.4 Child Access (Tap Avatar — No PIN)
 
-1. **Parent selects child on ParentHomeScreen** → Navigate to ChildPickerScreen
-2. **Child sees their avatar/name, taps it**
-3. **ChildPinScreen appears:**
-   - Numeric keypad for PIN entry
-   - PopScope prevents back-button bypass
-4. **Child enters PIN:**
-   - Check lockout status first (PinAttemptTracker)
-   - If locked: Show "Try again in X minutes"
-   - If not locked: Verify PIN via `BCrypt.checkpw()`
-5. **On success:**
-   - Create 24h session (local + Firestore)
-   - Reset attempt counter
-   - Navigate to ChildHomeScreen
-6. **On failure:**
-   - Increment failure counter
-   - After 5 failures: 15min lockout
-   - Show remaining attempts or lockout time
+1. **Parent is on ParentHomeScreen** (already Firebase Auth authenticated)
+2. **Parent taps child's card** → Navigate to `ChildPickerScreen`
+3. **Child taps their own avatar:**
+   - `activeChildProvider` set to child's ID
+   - `selectedChildProvider` set to child object
+   - `context.go('/child-home')` — replaces stack
+4. **ChildHomeScreen loads** — read-only view of that child's buckets, goals, badges
+5. **Child (or parent) taps "Back to Parent":**
+   - `activeChildProvider` cleared
+   - Navigate to `/parent-home`
 
 ### 5.5 Second Parent Joins Family
 
@@ -365,17 +336,11 @@ function validChildCreate() {
 - ✅ Children have NO Firebase Auth accounts (cannot call Cloud Functions)
 - ✅ Firestore rules: `allow write: if false;` on all child-accessible paths
 - ✅ Child UI is read-only (no edit buttons or write methods)
-- ✅ PopScope prevents back-button PIN bypass (`automaticallyImplyLeading: false`)
+- ✅ PopScope prevents back-button bypass (`automaticallyImplyLeading: false`)
+- ✅ Child picker only reachable from authenticated parent session
 
-### Risk 3: **PIN Brute-Force Attack** (MEDIUM) ✅ MITIGATED
-**Threat:** Attacker guesses child's PIN via repeated attempts.
-
-**Mitigations Implemented:**
-- ✅ 5-attempt limit before 15-minute lockout (`PinAttemptTracker`)
-- ✅ State persists in `FlutterSecureStorage` (survives app restart/force-close)
-- ✅ PINs stored as bcrypt hashes (computationally expensive to crack)
-- ✅ 4–6 digit requirement (10,000–1,000,000 combinations)
-- ✅ No PIN recovery for children (parent must reset via edit child)
+### Risk 3: **PIN Brute-Force Attack** — N/A (PIN Removed)
+**Resolution:** Child PIN authentication was removed in Sprint 7D. Children access their screen by tapping their avatar from the parent's already-authenticated session. No credentials to brute-force.
 
 ### Risk 4: **JWT Spoofing via userProfile Manipulation** (HIGH) ✅ MITIGATED
 **Threat:** User modifies their `userProfile.familyId` to get JWT claims for another family.
@@ -450,17 +415,17 @@ Four Cloud Functions deployed in `functions/src/index.ts`:
 |-----------|--------|---------|
 | Parent Firebase Auth | ✅ | `auth_service.dart`, `login_screen.dart` |
 | Forgot Password | ✅ | `forgot_password_screen.dart` |
-| PIN Service | ✅ | `pin_service.dart` |
-| PIN Brute-Force Protection | ✅ | `pin_attempt_tracker.dart` |
-| 24h Session Expiry | ✅ | `session_provider.dart`, `pin_service.dart` |
-| Firestore Rules | ✅ | `firestore.rules` |
+| PIN Service | ~~Removed Sprint 7D~~ | N/A — children tap avatar |
+| PIN Brute-Force Protection | ~~Removed Sprint 7D~~ | N/A |
+| 24h Session Expiry | ~~Removed Sprint 7D~~ | Session = parent's Firebase Auth session |
+| Firestore Rules | ✅ Deployed | `firestore.rules` — includes badges + goals |
 | JWT Spoofing Fix | ✅ | `functions/src/index.ts` |
 | Cloud Functions | ✅ | `functions/src/index.ts` (4 functions) |
-| Child Picker UI | ✅ | `child_picker_screen.dart` |
-| PIN Entry UI | ✅ | `child_pin_screen.dart` |
+| Child Picker UI | ✅ | `child_picker_screen.dart` — tap avatar to enter |
+| PIN Entry UI | ~~Removed~~ | `/child-pin` route removed from router |
 
 ---
 
 **END OF DOCUMENT**
 
-This architecture is fully implemented as of Sprint 5D. All security boundaries are enforced at multiple layers (UI, Firestore Rules, Cloud Functions). The two-tier auth model provides appropriate security for both parents and children while remaining COPPA-compliant. 🔒
+This architecture is fully implemented as of Sprint 7D. All security boundaries are enforced at multiple layers (UI, Firestore Rules, Cloud Functions). The two-tier auth model provides appropriate security for both parents and children while remaining COPPA-compliant. Children access their screens via avatar tap from the parent's authenticated session — no separate PIN required. 🔒
