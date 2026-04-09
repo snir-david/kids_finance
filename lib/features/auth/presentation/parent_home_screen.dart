@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,10 @@ import '../../children/domain/child.dart';
 import '../../children/providers/children_providers.dart';
 import '../../family/providers/family_providers.dart';
 import '../../goals/presentation/providers/goals_provider.dart';
+import '../../schedules/data/repositories/schedule_repository_provider.dart';
+import '../../schedules/data/models/schedule_model.dart';
+import '../../schedules/presentation/providers/schedules_provider.dart';
+import '../../schedules/presentation/widgets/add_schedule_dialog.dart';
 import '../providers/auth_providers.dart';
 
 /// Notifier for selected child ID in parent dashboard
@@ -68,6 +73,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _conflictSubscription = showConflictDialogIfNeeded(context, ref);
+      _processOverdueAllowances();
     });
   }
 
@@ -76,6 +82,33 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     WidgetsBinding.instance.removeObserver(this);
     _conflictSubscription?.close();
     super.dispose();
+  }
+
+  /// Calls the Cloud Function to distribute any overdue allowances for the
+  /// currently loaded family. Runs silently; shows a snackbar only if
+  /// schedules were actually paid out.
+  Future<void> _processOverdueAllowances() async {
+    try {
+      final familyId = ref.read(currentFamilyIdProvider).value;
+      if (familyId == null || familyId.isEmpty) return;
+
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('processScheduledAllowances')
+          .call({'familyId': familyId});
+
+      final processed = (result.data['processed'] as num?)?.toInt() ?? 0;
+      if (processed > 0 && mounted) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.allowancesPaid(processed)),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (_) {
+      // Allowance processing is best-effort; do not disrupt the UI on failure.
+    }
   }
 
   @override
@@ -579,6 +612,9 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
 
               // Compact savings goals summary (parent read-only view)
               _buildGoalsSummary(context, familyId, child, moneyBucket.balance),
+
+              // Allowance schedule section
+              _buildAllowanceSection(context, familyId, child),
             ],
           ),
         );
@@ -706,7 +742,180 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     );
   }
 
+  // ─── Allowance Schedule Section ───────────────────────────────────────────
+
+  Widget _buildAllowanceSection(
+      BuildContext context, String familyId, Child child) {
+    final l10n = AppLocalizations.of(context);
+    final schedulesAsync = ref.watch(
+      schedulesProvider((familyId: familyId, childId: child.id)),
+    );
+
+    return schedulesAsync.when(
+      data: (schedules) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Text('💰', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  l10n.allowanceSchedule,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                tooltip: l10n.addSchedule,
+                onPressed: () => _showAddScheduleDialog(context, familyId, child.id),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (schedules.isEmpty)
+            GestureDetector(
+              onTap: () => _showAddScheduleDialog(context, familyId, child.id),
+              child: Text(
+                l10n.noScheduleSet,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            )
+          else
+            Column(
+              children: schedules.map((s) {
+                final formatter = ref.read(currencyFormatterProvider);
+                final amountStr = formatter.formatAmount(s.amount);
+                final freqLabel = l10n.frequencyLabel(s.frequency.name);
+                final dayLabel = s.frequency == ScheduleFrequency.monthly
+                    ? '${l10n.dayOfMonth}: ${s.dayOfWeek}'
+                    : l10n.weekdayName(s.dayOfWeek);
+                final nextStr =
+                    '${l10n.nextRun}: ${s.nextRunAt.day}/${s.nextRunAt.month}/${s.nextRunAt.year}';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$amountStr • $freqLabel • $dayLabel',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              nextStr,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Pause/Resume toggle
+                      Switch(
+                        value: s.isActive,
+                        onChanged: (val) async {
+                          await ref
+                              .read(scheduleRepositoryProvider)
+                              .toggleSchedule(familyId, s.id, val);
+                        },
+                      ),
+                      // Delete
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            size: 18, color: Colors.red),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              content: Text(l10n.confirmDelete),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(ctx).pop(false),
+                                  child: Text(l10n.cancel),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.of(ctx).pop(true),
+                                  child: Text(l10n.delete),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true && context.mounted) {
+                            await ref
+                                .read(scheduleRepositoryProvider)
+                                .deleteSchedule(familyId, s.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(l10n.scheduleDeleted)),
+                              );
+                            }
+                          }
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
   // ─── Dialogs ───────────────────────────────────────────────────────────────
+
+  void _showAddScheduleDialog(
+      BuildContext context, String familyId, String childId) async {
+    final l10n = AppLocalizations.of(context);
+    final added = await showDialog<bool>(
+      context: context,
+      builder: (ctx) =>
+          AddScheduleDialog(familyId: familyId, childId: childId),
+    );
+    if (added == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.scheduleAdded)),
+      );
+    }
+  }
 
   void _showAddChildDialog(BuildContext context, String familyId) {
     showDialog(

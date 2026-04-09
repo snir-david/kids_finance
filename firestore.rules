@@ -133,6 +133,16 @@ service cloud.firestore {
         allow create: if isParentOfFamily(familyId);
         allow update: if isParentOfFamily(familyId) || isChildOfFamily(familyId, childId);
       }
+
+      // ── Allowance Schedules ──────────────────────────────────────────────────
+      // Only parents can manage allowance schedules for their family.
+
+      match /schedules/{scheduleId} {
+        allow read: if isParentOfFamily(familyId);
+        allow create: if isParentOfFamily(familyId);
+        allow update: if isParentOfFamily(familyId);
+        allow delete: if isParentOfFamily(familyId);
+      }
     }
 
     // ── Deny everything else ──────────────────────────────────────────────────

@@ -233,6 +233,57 @@ class AppLocalizations {
   String get bucketTransfer => isHebrew ? 'העברה בין קופסאות' : 'Bucket transfer';
   String get purchase => isHebrew ? 'קנייה' : 'Purchase';
 
+  // ─── Allowance Scheduler ──────────────────────────────────────────────────
+  String get allowanceSchedule =>
+      isHebrew ? 'לוח תשלומים' : 'Allowance Schedule';
+  String get addSchedule => isHebrew ? 'הוסף תשלום' : 'Add Schedule';
+  String get noScheduleSet =>
+      isHebrew ? 'אין תשלום מתוזמן' : 'No schedule set';
+  String get scheduleAmount => isHebrew ? 'סכום' : 'Amount';
+  String get frequency => isHebrew ? 'תדירות' : 'Frequency';
+  String get weekly => isHebrew ? 'שבועי' : 'Weekly';
+  String get biweekly => isHebrew ? 'דו-שבועי' : 'Biweekly';
+  String get monthly => isHebrew ? 'חודשי' : 'Monthly';
+  String get dayOfWeek => isHebrew ? 'יום בשבוע' : 'Day of week';
+  String get dayOfMonth => isHebrew ? 'יום בחודש' : 'Day of month';
+  String get monday => isHebrew ? 'שני' : 'Monday';
+  String get tuesday => isHebrew ? 'שלישי' : 'Tuesday';
+  String get wednesday => isHebrew ? 'רביעי' : 'Wednesday';
+  String get thursday => isHebrew ? 'חמישי' : 'Thursday';
+  String get friday => isHebrew ? 'שישי' : 'Friday';
+  String get saturday => isHebrew ? 'שבת' : 'Saturday';
+  String get sunday => isHebrew ? 'ראשון' : 'Sunday';
+  String get scheduleAdded => isHebrew ? '✅ תשלום נוסף!' : '✅ Schedule added!';
+  String get scheduleDeleted =>
+      isHebrew ? 'תשלום נמחק' : 'Schedule deleted';
+  String get nextRun => isHebrew ? 'תשלום הבא' : 'Next run';
+  String get paused => isHebrew ? 'מושהה' : 'Paused';
+  String get scheduleActive => isHebrew ? 'פעיל' : 'Active';
+  String get mustBePositive =>
+      isHebrew ? 'חייב להיות גדול מ-0' : 'Must be greater than 0';
+  String get required => isHebrew ? 'שדה חובה' : 'Required';
+  String get confirmDelete =>
+      isHebrew ? 'האם למחוק?' : 'Are you sure you want to delete?';
+  String get delete => isHebrew ? 'מחק' : 'Delete';
+  String allowancesPaid(int n) =>
+      isHebrew ? '✅ $n תשלומים בוצעו!' : '✅ $n allowance(s) paid!';
+  String weekdayName(int day) => switch (day) {
+        1 => isHebrew ? 'שני' : 'Mon',
+        2 => isHebrew ? 'שלישי' : 'Tue',
+        3 => isHebrew ? 'רביעי' : 'Wed',
+        4 => isHebrew ? 'חמישי' : 'Thu',
+        5 => isHebrew ? 'שישי' : 'Fri',
+        6 => isHebrew ? 'שבת' : 'Sat',
+        7 => isHebrew ? 'ראשון' : 'Sun',
+        _ => '$day',
+      };
+  String frequencyLabel(String freq) => switch (freq) {
+        'weekly' => isHebrew ? 'שבועי' : 'Weekly',
+        'biweekly' => isHebrew ? 'דו-שבועי' : 'Biweekly',
+        'monthly' => isHebrew ? 'חודשי' : 'Monthly',
+        _ => freq,
+      };
+
   // ─── Transaction descriptions (Recent Activity full sentences) ────────────
   String txMoneySet(String amount) =>
       isHebrew ? '💰 הכסף הוגדר ל-$amount' : '💰 Money set to $amount';
