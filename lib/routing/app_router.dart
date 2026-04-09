@@ -14,6 +14,7 @@ import '../features/auth/domain/app_user.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/transactions/presentation/transaction_history_screen.dart';
 import '../features/badges/presentation/screens/badges_screen.dart';
+import '../features/activity/presentation/screens/activity_feed_screen.dart';
 
 /// A [ChangeNotifier] that tells GoRouter to re-evaluate its redirect whenever
 /// the Firebase auth state or the user's Firestore role changes.
@@ -135,6 +136,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             childId: extra.childId,
             familyId: extra.familyId,
           );
+        },
+      ),
+      GoRoute(
+        path: '/family-feed',
+        builder: (context, state) {
+          final familyId = state.extra as String;
+          return ActivityFeedScreen(familyId: familyId);
         },
       ),
       GoRoute(

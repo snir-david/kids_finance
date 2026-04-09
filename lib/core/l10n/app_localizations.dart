@@ -357,6 +357,18 @@ class AppLocalizations {
   String get tooltipDismiss => isHebrew ? 'הבנתי! 👍' : 'Got it! 👍';
   String get resetTooltips => isHebrew ? 'איפוס הסברים' : 'Reset Tips';
   String get tooltipsReset => isHebrew ? 'ההסברים אופסו' : 'Tips have been reset';
+
+  // ─── Family Activity Feed ─────────────────────────────────────────────────
+  String get familyActivity => isHebrew ? 'פעילות משפחה' : 'Family Activity';
+  String get allChildren => isHebrew ? 'כל הילדים' : 'All Children';
+  String get allTypes => isHebrew ? 'כל הפעילויות' : 'All Types';
+  String get noActivity => isHebrew ? 'אין פעילות עדיין' : 'No activity yet';
+  String get filterBy => isHebrew ? 'סנן לפי' : 'Filter';
+  String get typeDeposit => isHebrew ? 'הפקדות' : 'Deposits';
+  String get typeWithdraw => isHebrew ? 'משיכות' : 'Withdrawals';
+  String get typeDonation => isHebrew ? 'תרומות' : 'Donations';
+  String get typeMultiply => isHebrew ? 'כפלים' : 'Multiplied';
+  String get typeAllowance => isHebrew ? 'דמי כיס' : 'Allowances';
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,19 +83,17 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
     super.dispose();
   }
 
-  /// Calls the Cloud Function to distribute any overdue allowances for the
-  /// currently loaded family. Runs silently; shows a snackbar only if
-  /// schedules were actually paid out.
+  /// Distributes any overdue allowances directly via Firestore — works without
+  /// Firebase Blaze plan. Called once when the parent home screen opens.
   Future<void> _processOverdueAllowances() async {
     try {
       final familyId = ref.read(currentFamilyIdProvider).value;
       if (familyId == null || familyId.isEmpty) return;
 
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('processScheduledAllowances')
-          .call({'familyId': familyId});
+      final processed = await ref
+          .read(scheduleRepositoryProvider)
+          .processOverdueAllowances(familyId);
 
-      final processed = (result.data['processed'] as num?)?.toInt() ?? 0;
       if (processed > 0 && mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +104,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
         );
       }
     } catch (_) {
-      // Allowance processing is best-effort; do not disrupt the UI on failure.
+      // Best-effort; do not disrupt the UI on failure.
     }
   }
 
@@ -167,6 +164,11 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
                     ),
                   ),
                 ),
+              IconButton(
+                icon: const Icon(Icons.timeline),
+                tooltip: l10n.familyActivity,
+                onPressed: () => context.push('/family-feed', extra: familyId),
+              ),
               IconButton(
                 icon: const Icon(Icons.settings),
                 tooltip: l10n.settings,
