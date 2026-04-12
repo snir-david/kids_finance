@@ -29,10 +29,13 @@ class FirebaseGoalRepository implements GoalRepository {
   Stream<List<Goal>> watchGoals(String familyId, String childId) {
     return _goalsRef(familyId, childId)
         .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Goal.fromFirestore(doc)).toList());
+        .map((snapshot) {
+          final goals =
+              snapshot.docs.map((doc) => Goal.fromFirestore(doc)).toList();
+          goals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return goals;
+        });
   }
 
   @override

@@ -707,7 +707,16 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> {
           },
           loading: () =>
               const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Could not load goals. Check your connection.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
         ),
       ],
     );
