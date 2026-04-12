@@ -326,7 +326,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> with Widget
   ) {
     final l10n = AppLocalizations.of(context);
     return Container(
-      height: 100,
+      height: 116,
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
